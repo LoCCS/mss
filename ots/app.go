@@ -8,8 +8,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-//var ONE = big.NewInt(0).SetBytes([]byte{0xff, 0xff, 0xff, 0xff})
-
 func SHA3Demo() {
 	fmt.Println("***demo of SHA3***")
 	sha := sha3.New256()
@@ -37,7 +35,4 @@ func bigIntDemo() {
 func main() {
 	//SHA3Demo()
 	//bigIntDemo()
-
-	fmt.Println(ONE)
-	const ONE = big.NewInt(1)
 }
