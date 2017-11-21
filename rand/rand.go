@@ -2,32 +2,56 @@ package rand
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 
-	"github.com/merkle-signature-scheme/config"
+	"github.com/sammy00/mss/config"
 	"golang.org/x/crypto/sha3"
 )
 
-// RandomSeed returns a random seed
-func RandomSeed() ([]byte, error) {
-	seed := make([]byte, config.N)
+// Rand produces a random randOTS each time by
+//	updating
+//		randOTS=hash(seed)
+//		seed=hash(seed||randOTS)
+type Rand struct {
+	seed []byte
+}
+
+func New(seed []byte) *Rand {
+	rng := new(Rand)
+	rng.Seed(seed)
+	return rng
+}
+
+func (rng *Rand) Read(p []byte) (int, error) {
+	// update randOTS
+	randOTS := sha3.Sum256(rng.seed)
+	copy(p, randOTS[:])
+
+	// update seed
+	randOTS = sha3.Sum256(append(rng.seed, randOTS[:]...))
+	copy(rng.seed, randOTS[:])
+
+	n := len(p)
+	if n > len(randOTS) {
+		n = len(randOTS)
+	}
+
+	return n, nil
+}
+
+func (rng *Rand) Seed(newSeed []byte) {
+	rng.seed = make([]byte, config.Size)
+	copy(rng.seed, newSeed)
+}
+
+func (rng *Rand) String() string {
+	return fmt.Sprintf("{ seed: %s }", hex.EncodeToString(rng.seed))
+}
+
+func RandSeed() ([]byte, error) {
+	seed := make([]byte, config.Size)
 	_, err := rand.Read(seed)
 
 	return seed, err
-}
-
-// PRNG returns seedDot and next seed
-func PRNG(seed []byte) ([]byte, []byte, error) {
-	if len(seed) != config.N {
-		e := fmt.Errorf("seed must be a []bytes of %d length", config.N)
-		return []byte{}, []byte{}, e
-	}
-	// seedDot=hash(seed)
-	seedDot := sha3.Sum256(seed) // [32]byte
-
-	// nextSeed=hash(seed || seedDot)
-	source := append(seed, seedDot[:]...)
-	nextSeed := sha3.Sum256(source)
-
-	return seed[:], nextSeed[:], nil
 }

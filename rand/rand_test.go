@@ -1,26 +1,37 @@
 package rand
 
 import (
-	"reflect"
+	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/sammy00/mss/config"
 )
 
-func TestRandomSeed(t *testing.T) {
-	r1, _ := RandomSeed()
-	r2, _ := RandomSeed()
-	r3, _ := RandomSeed()
-	if len(r1) != config.Size {
-		t.Error("length or random seed != %d", config.Size)
-	}
-	if reflect.DeepEqual(r1, r2) || reflect.DeepEqual(r2, r3) || reflect.DeepEqual(r3, r2) {
-		t.Error("Random seeds are equal")
+func TestRandSeed(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		seed, err := RandSeed()
+		if nil != err {
+			t.Fatal(err)
+		}
+
+		if len(seed) != config.Size {
+			t.Errorf("invalid lenght of seed, wants %v, got %v", config.Size, len(seed))
+		}
 	}
 }
 
-func TestPRNG(t *testing.T) {
-	r1, _ := RandomSeed()
-	seedDot1, nextSeed1, _ := PRNG(r1[:])
+func TestRand(t *testing.T) {
+	seed, err := RandSeed()
+	if nil != err {
+		fmt.Println(err)
+		return
+	}
 
+	rng := New(seed)
+	p := make([]byte, config.Size)
+	for i := 0; i < 10; i++ {
+		rng.Read(p)
+		fmt.Println("p=", hex.EncodeToString(p))
+	}
 }
