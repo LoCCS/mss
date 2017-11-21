@@ -35,4 +35,7 @@ func bigIntDemo() {
 func main() {
 	//SHA3Demo()
 	//bigIntDemo()
+
+	hello := big.NewInt(1)
+	fmt.Println(hello.Not(hello))
 }

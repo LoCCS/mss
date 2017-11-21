@@ -1,43 +1,53 @@
 package winternitz
 
 import (
-	"errors"
-	"math/big"
+	"io"
+
+	"github.com/sammy00/mss/config"
 )
 
 const (
 	W = 5
 )
 
-var oneMask *big.Int
-
-func init() {
-	oneMask = big.NewInt(1)
-	one := big.NewInt(1)
-	oneMask.Lsh(one, W).Sub(oneMask, one)
-
-	//fmt.Println("one=", oneMask.Text(16))
+// PublicKey as container for public key
+type PublicKey struct {
+	y [][]byte
 }
 
-// split partitions a given digest into t blocks,
-// each of which is of W bits
-func split(digest []byte, t int) ([]*big.Int, error) {
-	if t*W < len(digest)*8 {
-		return nil, errors.New("invalid number of blocks")
-	}
-
-	// convert digest as a big-endian byte slice into a big integer
-	digestInt := new(big.Int)
-	digestInt.SetBytes(digest)
-
-	// split digestInt into t blocks
-	blocks := make([]*big.Int, t)
-	for i := len(blocks) - 1; i >= 0; i-- {
-		blocks[i] = big.NewInt(0)
-		//fmt.Println(blocks[i])
-		blocks[i].And(oneMask, digestInt)
-		digestInt.Rsh(digestInt, W)
-	}
-
-	return blocks, nil
+// PrivateKey as container for private key,
+//	it also embeds its corresponding public key
+type PrivateKey struct {
+	PublicKey
+	x [][]byte
 }
+
+// GenerateKey generates a one-time key pair
+func GenerateKey(rand io.Reader) (*PrivateKey, error) {
+	sk := new(PrivateKey)
+	sk.x = make([][]byte, t)
+	sk.y = make([][]byte, len(sk.x))
+
+	applier := NewHashFuncApplier(pow2ToW(), config.HashFunc())
+	for i := range sk.x {
+		sk.x[i] = make([]byte, config.Size)
+		// make a rand x[i]
+		rand.Read(sk.x[i])
+
+		// derive the corresponding y[i]
+		sk.y[i] = applier.Eval(sk.x[i])
+	}
+
+	return sk, nil
+}
+
+/*
+func Sign(sk *PrivateKey, hash []byte) (*mssSig, error) {
+	blocks, err := parseBlocks(hash)
+	if nil != err {
+		return nil, err
+	}
+
+	return nil, nil
+}
+*/

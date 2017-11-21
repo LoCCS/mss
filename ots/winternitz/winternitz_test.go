@@ -1,24 +1,20 @@
 package winternitz
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
-	"math/big"
 	"testing"
 )
 
-func TestSplit(t *testing.T) {
-	digest := []byte{0x00, 0x01, 0x02, 0x03}
+// TestGenerateKey tests the generation of a one-time key pair (sk,pk)
+func TestGenerateKey(t *testing.T) {
+	sk, _ := GenerateKey(rand.Reader)
 
-	if blocks, err := Split(digest, 7); nil == err {
-		for _, block := range blocks {
-			fmt.Print(block.Text(2), " ")
-		}
-	} else {
-		fmt.Println(err)
+	fmt.Println("totally", len(sk.x), "key pairs as")
+	fmt.Println("{")
+	for i, x := range sk.x {
+		fmt.Printf(" (%s,\n  %s)\n", hex.EncodeToString(x), hex.EncodeToString(sk.y[i]))
 	}
-	fmt.Println()
-
-	digestInt := big.NewInt(0)
-	digestInt.SetBytes(digest)
-	fmt.Println(digestInt.Text(2))
+	fmt.Println("}")
 }
