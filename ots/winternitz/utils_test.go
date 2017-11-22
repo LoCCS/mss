@@ -3,7 +3,6 @@ package winternitz
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -17,10 +16,10 @@ func TestHashFuncApplier(t *testing.T) {
 
 	outs := make([][]byte, 16)
 	for i := range outs {
-		fmt.Printf("*** numTimes=%v\n", i)
+		//fmt.Printf("*** numTimes=%v\n", i)
 
 		applier := NewHashFuncApplier(big.NewInt(int64(i+1)), h)
-		outs[i] = applier.Eval(in)
+		outs[i] = applier.Eval(in, nil)
 
 		var prev []byte
 		if i > 0 {

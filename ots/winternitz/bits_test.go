@@ -11,7 +11,7 @@ import (
 // TestOneMask tests the format of the mask,
 //	which shoulde be in form of `11...1` of length W
 func TestOneMask(t *testing.T) {
-	mask := oneMask()
+	mask := bitMask()
 	want := []byte{0x1f}
 
 	if !bytes.Equal(mask.Bytes(), want) {

@@ -1,6 +1,6 @@
 # Merkle Signature Scheme  
 ![mss logo](https://img.shields.io/badge/mss-v0.1-blue.svg) 
-![progress hint](https://img.shields.io/badge/completion-20%25-brightgreen.svg)
+![progress hint](https://img.shields.io/badge/completion-33%25-brightgreen.svg)
 
 Copyright (c) 2017-2018 sammy00.
 
@@ -15,8 +15,8 @@ Project to implement the Merkle signature scheme (MSS).
 ## Progress  
 ### Winternitz one-time signature (OTS) scheme
 + [x] key generation  
-+ [ ] signing  
-+ [ ] verfication  
++ [x] signing  
++ [x] verfication  
 ### MSS  
 + [ ] key generation and setup  
   - [ ] tree hash algorithm  

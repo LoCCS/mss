@@ -19,13 +19,19 @@ func NewHashFuncApplier(numTimes *big.Int, h hash.Hash) *HashFuncApplier {
 }
 
 // Eval applies the underlying primitive hash function to the given
-//	input `in` iteratively a predefined number of time
-func (applier *HashFuncApplier) Eval(in []byte) []byte {
-	numItr := new(big.Int)
+//	input `in` iteratively `numTimes` times
+func (applier *HashFuncApplier) Eval(in []byte, numTimes *big.Int) []byte {
 	delta := big.NewInt(1)
 
+	numItr := new(big.Int)
+	if nil != numTimes {
+		numItr.Set(numTimes)
+	} else {
+		numItr.Set(applier.numTimes)
+	}
+
 	out := in
-	for numItr.Set(applier.numTimes); numItr.Sign() > 0; numItr.Sub(numItr, delta) {
+	for ; numItr.Sign() > 0; numItr.Sub(numItr, delta) {
 		// update `out` as `out=h(out)`
 		applier.h.Reset()
 		applier.h.Write(out)
