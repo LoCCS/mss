@@ -12,12 +12,23 @@ import (
 
 // TestGenerateKey tests the generation of a one-time key pair (sk,pk)
 func TestGenerateKey(t *testing.T) {
+	fmt.Println("***1st generation")
 	sk, _ := GenerateKey(rand.Reader)
 
 	fmt.Println("totally", len(sk.x), "key pairs as")
 	fmt.Println("{")
 	for i, x := range sk.x {
-		fmt.Printf(" (%s,\n  %s)\n", hex.EncodeToString(x), hex.EncodeToString(sk.y[i]))
+		fmt.Printf(" (%s,\n  %s)\n", hex.EncodeToString(x), hex.EncodeToString(sk.Y[i]))
+	}
+	fmt.Println("}")
+
+	fmt.Println("***2nd generation")
+	sk, _ = GenerateKey(rand.Reader)
+
+	fmt.Println("totally", len(sk.x), "key pairs as")
+	fmt.Println("{")
+	for i, x := range sk.x {
+		fmt.Printf(" (%s,\n  %s)\n", hex.EncodeToString(x), hex.EncodeToString(sk.Y[i]))
 	}
 	fmt.Println("}")
 }

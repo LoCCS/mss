@@ -1,38 +1,8 @@
-package container
-
-import (
-	"fmt"
-)
-
-// MerkleNode is a node of a merkle tree
-type MerkleNode struct {
-	height int
-	index  int
-	nu     []byte
-}
-
-// NewMerkleNode makes a node with specific height, index
-//	and hash digest
-func NewMerkleNode(h, i int, hash []byte) *MerkleNode {
-	node := &MerkleNode{height: h, index: i}
-
-	if nil != hash {
-		node.nu = make([]byte, len(hash))
-		copy(node.nu, hash)
-	}
-
-	return node
-}
-
-// String returns the string representation of a node
-func (node *MerkleNode) String() string {
-	return fmt.Sprintf("{height: %v, index: %v, nu: %s}",
-		node.height, node.index, string(node.nu))
-}
+package stack
 
 // Element is an element in a single linked list
 type Element struct {
-	Value *MerkleNode
+	Value interface{}
 	next  *Element
 }
 
@@ -50,19 +20,19 @@ type Stack struct {
 }
 
 // New returns an initialized stack
-func NewStack() *Stack {
+func New() *Stack {
 	return &Stack{nil, 0}
 }
 
 // Push adds an element to the stack
-func (s *Stack) Push(x *MerkleNode) {
+func (s *Stack) Push(x interface{}) {
 	s.top = &Element{x, s.top}
 	s.size++
 }
 
 // Pop out the top element from the stack
-func (s *Stack) Pop() *MerkleNode {
-	var x *MerkleNode
+func (s *Stack) Pop() interface{} {
+	var x interface{}
 	if nil != s.top {
 		x, s.top = s.top.Value, s.top.next
 		s.size--
@@ -72,7 +42,7 @@ func (s *Stack) Pop() *MerkleNode {
 }
 
 // Peek returns the element in the top of the s
-func (s *Stack) Peek() *MerkleNode {
+func (s *Stack) Peek() interface{} {
 	if nil != s.top {
 		return s.top.Value
 	}
@@ -81,8 +51,8 @@ func (s *Stack) Peek() *MerkleNode {
 }
 
 // Peek returns the two elements in the top of the s
-func (s *Stack) Peek2() (*MerkleNode, *MerkleNode) {
-	var x, y *MerkleNode
+func (s *Stack) Peek2() (interface{}, interface{}) {
+	var x, y interface{}
 
 	if nil != s.top {
 		x = s.top.Value

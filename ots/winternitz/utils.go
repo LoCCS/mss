@@ -3,6 +3,8 @@ package winternitz
 import (
 	"hash"
 	"math/big"
+
+	"github.com/sammy00/mss/config"
 )
 
 // HashFuncApplier composes a composite function `f(x)=h^(numTimes)(x)`
@@ -39,4 +41,15 @@ func (applier *HashFuncApplier) Eval(in []byte, numTimes *big.Int) []byte {
 	}
 
 	return out
+}
+
+// HashPk computes the hash value for a MSS public key
+func HashPk(pk *PublicKey) []byte {
+	hashFunc := config.HashFunc()
+
+	for i := range pk.Y {
+		hashFunc.Write(pk.Y[i])
+	}
+
+	return hashFunc.Sum(nil)
 }

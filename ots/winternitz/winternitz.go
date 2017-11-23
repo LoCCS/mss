@@ -15,7 +15,7 @@ const (
 
 // PublicKey as container for public key
 type PublicKey struct {
-	y [][]byte
+	Y [][]byte
 }
 
 // PrivateKey as container for private key,
@@ -34,7 +34,7 @@ type MerkleSig struct {
 func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 	sk := new(PrivateKey)
 	sk.x = make([][]byte, t)
-	sk.y = make([][]byte, t)
+	sk.Y = make([][]byte, t)
 
 	applier := NewHashFuncApplier(bitMask(), config.HashFunc())
 
@@ -44,7 +44,7 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 		rand.Read(sk.x[i])
 
 		// derive the corresponding y[i]
-		sk.y[i] = applier.Eval(sk.x[i], nil)
+		sk.Y[i] = applier.Eval(sk.x[i], nil)
 	}
 
 	return sk, nil
@@ -76,8 +76,8 @@ func Sign(sk *PrivateKey, hash []byte) (*MerkleSig, error) {
 //	against the claimed public key
 func Verify(pk *PublicKey, hash []byte, merkleSig *MerkleSig) bool {
 	blocks, err := hashToBlocks(hash)
-	if (nil != err) || (len(pk.y) != len(blocks)) ||
-		(len(pk.y) != len(merkleSig.sigma)) {
+	if (nil != err) || (len(pk.Y) != len(blocks)) ||
+		(len(pk.Y) != len(merkleSig.sigma)) {
 		return false
 	}
 
@@ -88,7 +88,7 @@ func Verify(pk *PublicKey, hash []byte, merkleSig *MerkleSig) bool {
 		// 2^W-1-b_i
 		numTimes.Sub(mask, blocks[i])
 		y := applier.Eval(merkleSig.sigma[i], numTimes)
-		if !bytes.Equal(pk.y[i], y) {
+		if !bytes.Equal(pk.Y[i], y) {
 			return false
 		}
 	}
