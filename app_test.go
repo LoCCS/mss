@@ -1,4 +1,4 @@
-package main
+package mss_test
 
 import (
 	"fmt"
@@ -6,9 +6,6 @@ import (
 )
 
 func TestApp(t *testing.T) {
-	hello := 5
-	fmt.Printf("%v\n", hello)
-
-	world := hello--
-	fmt.Printf("%v\n", world)
+	i := uint32(3)
+	fmt.Println(1<<i - 1)
 }

@@ -37,25 +37,33 @@ func New(seed []byte) *Rand {
 // Read reads min(len(p),config.Size) random bytes
 //	from the PRNG
 func (rng *Rand) Read(p []byte) (int, error) {
+	hashFunc := sha3.New256()
+
+	hashFunc.Write(rng.seed)
 	// update randOTS
-	randOTS := sha3.Sum256(rng.seed)
-	copy(p, randOTS[:])
+	randOTS := hashFunc.Sum(nil)
+	sz := copy(p, randOTS)
 
 	// update seed
-	randOTS = sha3.Sum256(append(rng.seed, randOTS[:]...))
-	copy(rng.seed, randOTS[:])
+	hashFunc.Write(randOTS)
+	randOTS = hashFunc.Sum(nil)
+	copy(rng.seed, randOTS)
 
-	n := len(p)
-	if n > len(randOTS) {
-		n = len(randOTS)
-	}
+	return sz, nil
+}
 
-	return n, nil
+func (rng *Rand) TellMeSeed() []byte {
+	seed := make([]byte, len(rng.seed))
+	copy(seed, rng.seed)
+
+	return seed
 }
 
 // Seed reset the PRNG to be seeded at the new seed
 func (rng *Rand) Seed(newSeed []byte) {
-	rng.seed = make([]byte, config.Size)
+	if nil == rng.seed {
+		rng.seed = make([]byte, config.Size)
+	}
 	copy(rng.seed, newSeed)
 }
 

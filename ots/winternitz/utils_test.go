@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sammy00/mss/config"
+	"github.com/sammy00/mss/rand"
 )
 
 // TestHashFuncApplier tests the HashFuncApplier
@@ -33,6 +34,26 @@ func TestHashFuncApplier(t *testing.T) {
 		if !bytes.Equal(h.Sum(nil), outs[i]) {
 			t.Fatalf("want %s, but got %s",
 				hex.EncodeToString(h.Sum(nil)), hex.EncodeToString(outs[i]))
+		}
+	}
+}
+
+// TestSkPkIterator tests correctness SkPkIterator, including
+//	normal running (demo by iter) and recovered running from
+//	seed (demo by iter2)
+func TestSkPkIterator(t *testing.T) {
+	seed, _ := rand.RandSeed()
+
+	iter := NewSkPkIterator(seed)
+	iter.Next()
+
+	iter2 := NewSkPkIterator(iter.Seed())
+	for i := 0; i < 2; i++ {
+		sk1, _ := iter.Next()
+		sk2, _ := iter2.Next()
+
+		if !IsEqual(sk1, sk2) {
+			t.Fatal("sk's should be equal")
 		}
 	}
 }

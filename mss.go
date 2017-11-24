@@ -1,6 +1,5 @@
-package main
+package mss
 
-//import "github.com/sammy00/mss/container/stack"
 import (
 	"io"
 
@@ -8,25 +7,77 @@ import (
 	"github.com/sammy00/mss/ots/winternitz"
 )
 
-// Node is a node in the Merkle tree
-type Node struct {
-	height int
-	index  int
-	nu     []byte
-}
-
-func TreeHashImpr(H, K int, rand io.Reader) {
+func treeHash(H uint32, rand io.Reader) ([]byte, []*stack.Stack) {
 	S := stack.New()
 
 	// push the 1st leaf on stack
 	sk, _ := winternitz.GenerateKey(rand)
-	S.Push(&Node{0, 0, winternitz.HashPk(&sk.PublicKey)})
+	S.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
 
-	availableIndices := make([]int, K-1)
-	leafIdxMax := ((1 << H) - 1)
-	for s := 1; s <= leafIdxMax; s++ {
+	numLeaf := ((1 << H) - 1)
+	for leaf := 1; leaf < numLeaf; leaf++ {
+		sk, _ = winternitz.GenerateKey(rand)
+		i, nu := 0, winternitz.HashPk(&sk.PublicKey)
+		for !S.Empty() {
+			node := S.Peek().(*Node)
 
+			if node.height != i {
+				break
+			}
+
+			S.Pop()
+			i, nu = i+1, merge(node.nu, nu)
+		}
+
+		S.Push(&Node{i, nu})
 	}
 
-	//S.Push(&Node{0, 0})
+	root := S.Peek().(*Node)
+	S.Pop()
+
+	return root.nu, nil
 }
+
+// MerkleSS implements the Merkle signature scheme
+type MerkleSS struct {
+	H             uint32
+	Auth          [][]byte
+	retainedStack []*stack.Stack
+	root          []byte
+}
+
+/*
+// NewMerkleSS makes a fresh Merkle signing routine
+//	by running the generate key and setup procedure
+func NewMerkleSS(H uint32) (*MerkleSS, error) {
+	if H < 2 {
+		return nil, errors.New("H should be larger than 1")
+	}
+
+	S := stack.New()
+
+	// push the 1st leaf on stack
+	sk, _ := winternitz.GenerateKey(rand)
+	S.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
+
+	numLeaf := ((1 << H) - 1)
+	for leaf := 1; leaf < numLeaf; leaf++ {
+		sk, _ = winternitz.GenerateKey(rand)
+		i, nu := 0, winternitz.HashPk(&sk.PublicKey)
+		for !S.Empty() {
+			node := S.Peek().(*Node)
+
+			if node.height != i {
+				break
+			}
+
+			S.Pop()
+			i, nu = i+1, merge(node.nu, nu)
+		}
+
+		S.Push(&Node{i, nu})
+	}
+
+	root := S.Peek()
+}
+*/

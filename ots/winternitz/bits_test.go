@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-// TestOneMask tests the format of the mask,
+// TestBitMask tests the format of the mask,
 //	which shoulde be in form of `11...1` of length W
-func TestOneMask(t *testing.T) {
+func TestBitMask(t *testing.T) {
 	mask := bitMask()
-	want := []byte{0x1f}
+	want := []byte{0xff, 0xff}
 
 	if !bytes.Equal(mask.Bytes(), want) {
 		t.Fatal("wants %s, got %s", hex.EncodeToString(want),
