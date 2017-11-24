@@ -25,8 +25,8 @@ type PrivateKey struct {
 	x [][]byte
 }
 
-// MerkleSig as container for the Merkle signature
-type MerkleSig struct {
+// WinternitzSig as container for the Merkle signature
+type WinternitzSig struct {
 	sigma [][]byte
 }
 
@@ -52,7 +52,7 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 
 // Sign generates the signature for a message digest based on
 //	the given private key
-func Sign(sk *PrivateKey, hash []byte) (*MerkleSig, error) {
+func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	blocks, err := hashToBlocks(hash)
 	if nil != err {
 		return nil, err
@@ -61,7 +61,7 @@ func Sign(sk *PrivateKey, hash []byte) (*MerkleSig, error) {
 		return nil, errors.New("mismatched private key and b_i")
 	}
 
-	merkleSig := new(MerkleSig)
+	merkleSig := new(WinternitzSig)
 	merkleSig.sigma = make([][]byte, len(sk.x))
 
 	applier := NewHashFuncApplier(nil, config.HashFunc())
@@ -74,7 +74,7 @@ func Sign(sk *PrivateKey, hash []byte) (*MerkleSig, error) {
 
 // Verify verifies the Merkle signature on a message digest
 //	against the claimed public key
-func Verify(pk *PublicKey, hash []byte, merkleSig *MerkleSig) bool {
+func Verify(pk *PublicKey, hash []byte, merkleSig *WinternitzSig) bool {
 	blocks, err := hashToBlocks(hash)
 	if (nil != err) || (len(pk.Y) != len(blocks)) ||
 		(len(pk.Y) != len(merkleSig.sigma)) {
