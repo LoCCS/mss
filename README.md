@@ -1,6 +1,6 @@
 # Merkle Signature Scheme  
-![mss logo](https://img.shields.io/badge/mss-v0.1-blue.svg) 
-![progress hint](https://img.shields.io/badge/completion-33%25-brightgreen.svg)
+![mss logo](https://img.shields.io/badge/mss-v0.3-blue.svg) 
+![progress hint](https://img.shields.io/badge/completion-60%25-brightgreen.svg)
 
 Copyright (c) 2017-2018 sammy00.
 
