@@ -1,83 +1,85 @@
 package mss
 
 import (
-	"io"
+	"errors"
+	"math"
 
-	"github.com/sammy00/mss/container/stack"
-	"github.com/sammy00/mss/ots/winternitz"
+	wots "github.com/sammy00/mss/ots/winternitz"
 )
-
-func treeHash(H uint32, rand io.Reader) ([]byte, []*stack.Stack) {
-	S := stack.New()
-
-	// push the 1st leaf on stack
-	sk, _ := winternitz.GenerateKey(rand)
-	S.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
-
-	numLeaf := ((1 << H) - 1)
-	for leaf := 1; leaf < numLeaf; leaf++ {
-		sk, _ = winternitz.GenerateKey(rand)
-		i, nu := 0, winternitz.HashPk(&sk.PublicKey)
-		for !S.Empty() {
-			node := S.Peek().(*Node)
-
-			if node.height != i {
-				break
-			}
-
-			S.Pop()
-			i, nu = i+1, merge(node.nu, nu)
-		}
-
-		S.Push(&Node{i, nu})
-	}
-
-	root := S.Peek().(*Node)
-	S.Pop()
-
-	return root.nu, nil
-}
 
 // MerkleSS implements the Merkle signature scheme
 type MerkleSS struct {
-	H             uint32
-	Auth          [][]byte
-	retainedStack []*stack.Stack
-	root          []byte
+	H              uint32
+	NumLeafUsed    uint32
+	auth           [][]byte
+	root           []byte
+	keyItr         *wots.SkPkIterator
+	treeHashStacks []*TreeHashStack
 }
 
-/*
 // NewMerkleSS makes a fresh Merkle signing routine
 //	by running the generate key and setup procedure
-func NewMerkleSS(H uint32) (*MerkleSS, error) {
+func NewMerkleSS(H uint32, seed []byte) (*MerkleSS, error) {
 	if H < 2 {
 		return nil, errors.New("H should be larger than 1")
 	}
 
-	S := stack.New()
+	merkleSS := new(MerkleSS)
+	merkleSS.H = H
+	merkleSS.auth = make([][]byte, H)
+	merkleSS.keyItr = wots.NewSkPkIterator(seed)
+	merkleSS.treeHashStacks = make([]*TreeHashStack, H)
 
-	// push the 1st leaf on stack
-	sk, _ := winternitz.GenerateKey(rand)
-	S.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
+	globalStack := NewTreeHashStack(0, H+1)
+	//numLeaf := ((1 << H) - 1)
 
-	numLeaf := ((1 << H) - 1)
-	for leaf := 1; leaf < numLeaf; leaf++ {
-		sk, _ = winternitz.GenerateKey(rand)
-		i, nu := 0, winternitz.HashPk(&sk.PublicKey)
-		for !S.Empty() {
-			node := S.Peek().(*Node)
+	for h := uint32(0); h < H; h++ {
+		globalStack.Update(1, merkleSS.keyItr)
 
-			if node.height != i {
-				break
-			}
+		merkleSS.treeHashStacks[h] = NewTreeHashStack(0, h)
+		merkleSS.treeHashStacks[h].nodeStack.Push(globalStack.Top())
 
-			S.Pop()
-			i, nu = i+1, merge(node.nu, nu)
-		}
-
-		S.Push(&Node{i, nu})
+		globalStack.Update((1<<(h+1))-1, merkleSS.keyItr)
+		merkleSS.auth[h] = make([]byte, len(globalStack.Top().nu))
+		copy(merkleSS.auth[h], globalStack.Top().nu)
 	}
 
-	root := S.Peek()
+	globalStack.Update(1, merkleSS.keyItr)
+	merkleSS.root = make([]byte, len(globalStack.Top().nu))
+	copy(merkleSS.root, globalStack.Top().nu)
+
+	return merkleSS, nil
 }
-*/
+
+func (merkleSS *MerkleSS) refreshAuth() {
+	nextLeaf := merkleSS.NumLeafUsed + 1
+	for h := uint32(0); h < merkleSS.H; h++ {
+		pow2Toh := uint32(1 << h)
+		// nextLeaf % 2^h == 0
+		if 0 == nextLeaf&pow2Toh {
+			copy(merkleSS.auth[h], merkleSS.treeHashStacks[h].Top().nu)
+			startingLeaf := (nextLeaf + pow2Toh) ^ pow2Toh
+			merkleSS.treeHashStacks[h].Init(startingLeaf, h)
+		}
+	}
+}
+func (merkleSS *MerkleSS) refreshTreeHashStacks() {
+	numOp := 2*merkleSS.H - 1
+	for i := uint32(0); i < numOp; i++ {
+		globalLowest := uint32(math.MaxUint32)
+		var focus uint32
+		for h := uint32(0); h < merkleSS.H; h++ {
+			localLowest := merkleSS.treeHashStacks[h].LowestTailHeight()
+			if localLowest < globalLowest {
+				globalLowest = localLowest
+				focus = h
+			}
+		}
+		merkleSS.treeHashStacks[focus].Update(1, merkleSS.keyItr)
+	}
+}
+func (merkleSS *MerkleSS) Traverse() {
+	merkleSS.refreshAuth()
+	merkleSS.refreshTreeHashStacks()
+	merkleSS.NumLeafUsed++
+}
