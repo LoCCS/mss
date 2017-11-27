@@ -48,16 +48,24 @@ func (applier *HashFuncApplier) Eval(in []byte, numTimes *big.Int) []byte {
 // SkPkIterator is a iterator producing a key chain for
 //	user based on a seed
 type SkPkIterator struct {
-	rng *rand.Rand
+	rng      *rand.Rand
+	roundIdx uint32 // the 0-based index of next running iteration w.r.t the initial genesis seed0
 }
 
 // NewSkPkIterator makes a key pair iterator
 func NewSkPkIterator(seed []byte) *SkPkIterator {
-	return &SkPkIterator{rand.New(seed)}
+	return &SkPkIterator{rand.New(seed), 0}
+}
+
+// Init resets the SkPkIterator
+func (iter *SkPkIterator) Init(seed []byte, roundIdx uint32) {
+	iter.rng = rand.New(seed)
+	iter.roundIdx = roundIdx
 }
 
 // Next estimates and returns the next sk-pk pair
 func (iter *SkPkIterator) Next() (*PrivateKey, error) {
+	iter.roundIdx++
 	return GenerateKey(iter.rng)
 }
 
@@ -65,6 +73,11 @@ func (iter *SkPkIterator) Next() (*PrivateKey, error) {
 //	such as saving state of the iterator
 func (iter *SkPkIterator) Seed() []byte {
 	return iter.rng.TellMeSeed()
+}
+
+// Round returns 0-based index of the next running iteration
+func (iter *SkPkIterator) Round() uint32 {
+	return iter.roundIdx
 }
 
 // HashPk computes the hash value for a MSS public key
