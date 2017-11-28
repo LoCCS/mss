@@ -54,8 +54,7 @@ func (th *TreeHashStack) Init(startingLeaf, h uint32) error {
 
 // IsCompleted checks if the tree hash instance has completed
 func (th *TreeHashStack) IsCompleted() bool {
-	//return th.leaf >= uint32(1<<th.height)
-	return th.leaf >= th.leafUpper
+	return (th.leaf >= th.leafUpper) && (!th.nodeStack.Empty())
 }
 
 // LowestTailHeight returns the lowest height of tail nodes
@@ -82,10 +81,6 @@ func (th *TreeHashStack) Top() *Node {
 // Update executes numOp updates on the instance, and
 //	add on the new leaf derived by keyItr if necessary
 func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.SkPkIterator) {
-	if th.IsCompleted() {
-		return
-	}
-
 	for (numOp > 0) && !th.IsCompleted() {
 		// may have nodes at the same height to merge
 		if th.nodeStack.Len() >= 2 {
