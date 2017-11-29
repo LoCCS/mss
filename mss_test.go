@@ -1,31 +1,19 @@
 package mss_test
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 )
 
-type hello struct {
-	Who string
-}
-
-type world struct {
-	Rank   int32
-	Prefix hello
-}
-
 func TestMSS(t *testing.T) {
-	wd := world{
-		Rank:   123,
-		Prefix: hello{"world"},
-	}
+	/*
+		var hello uint32 = 0xfffff
+		buf := make([]byte, 4)
 
-	data, err := json.Marshal(wd)
-	if nil != err {
-		fmt.Println(err)
-		return
-	}
+		binary.BigEndian.PutUint32(buf, hello)
+		fmt.Println(buf)
 
-	fmt.Println(string(data))
+		buf2 := make([]byte, 4)
+		binary.LittleEndian.PutUint32(buf2, hello)
+		fmt.Println(buf2)
+	*/
 }

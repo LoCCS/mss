@@ -7,25 +7,23 @@ import (
 	"github.com/sammy00/mss/rand"
 )
 
-// TestKeyIteratorCoding checks the encoding/decoding
+// TestKeyIteratorSerialize checks the serialization/deserialization
 //	between KeyIterator and JSON
-func TestKeyIteratorCoding(t *testing.T) {
+func TestKeyIteratorSerialization(t *testing.T) {
 	seed, _ := rand.RandSeed()
 
 	iter := NewKeyIterator(seed)
 	iter.Next()
 
-	bytesJson, err := iter.MarshalAsJSON()
-	if nil != err {
-		t.Fatal(err)
-	}
+	integratedSeed := iter.Serialize()
 
 	iter2 := new(KeyIterator)
-	iter2.UnmarshalFromJSON(bytesJson)
-	bytesJson2, err := iter2.MarshalAsJSON()
+	if iter2.Init(integratedSeed) {
+		integratedSeed2 := iter2.Serialize()
 
-	if !bytes.Equal(bytesJson, bytesJson2) {
-		t.Fatal("error in MarshalAssJSON/UnmarshalFromJSON")
+		if !bytes.Equal(integratedSeed, integratedSeed2) {
+			t.Fatal("error in MarshalAssJSON/UnmarshalFromJSON")
+		}
 	}
 }
 
@@ -38,13 +36,10 @@ func TestKeyIteratorExec(t *testing.T) {
 	iter := NewKeyIterator(seed)
 	iter.Next()
 
-	//iter2 := NewKeyIterator(iter.rng.ExportSeed())
-	bytesJson, err := iter.MarshalAsJSON()
-	if nil != err {
-		t.Fatal(err)
-	}
 	iter2 := new(KeyIterator)
-	iter2.UnmarshalFromJSON(bytesJson)
+	if !iter2.Init(iter.Serialize()) {
+		t.Fatal("invalid integrated seed")
+	}
 
 	for i := 0; i < 2; i++ {
 		sk1, _ := iter.Next()

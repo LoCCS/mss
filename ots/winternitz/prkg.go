@@ -1,7 +1,7 @@
 package winternitz
 
 import (
-	"encoding/json"
+	"encoding/binary"
 
 	"github.com/sammy00/mss/rand"
 )
@@ -16,14 +16,21 @@ type KeyIterator struct {
 }
 
 // NewKeyIterator makes a key pair iterator
-func NewKeyIterator(seed []byte) *KeyIterator {
-	return &KeyIterator{rand.New(seed), 0}
+func NewKeyIterator(compactSeed []byte) *KeyIterator {
+	return &KeyIterator{rand.New(compactSeed), 0}
 }
 
 // Init resets the KeyIterator
-func (iter *KeyIterator) Init(seed []byte, offset uint32) {
-	iter.rng = rand.New(seed)
-	iter.offset = offset
+func (iter *KeyIterator) Init(integatedSeed []byte) bool {
+	seedLen := len(integatedSeed) - 4
+	if seedLen < 0 {
+		return false
+	}
+
+	iter.rng = rand.New(integatedSeed[:seedLen])
+	iter.offset = binary.BigEndian.Uint32(integatedSeed[seedLen:])
+
+	return true
 }
 
 // Next estimates and returns the next sk-pk pair
@@ -44,28 +51,17 @@ func (iter *KeyIterator) Seed() []byte {
 	return iter.rng.ExportSeed()
 }
 
-// keyIteratorEx is a version of KeyIterator to export
-type keyIteratorEx struct {
-	Seed   []byte
-	Offset uint32
-}
-
-// MarshalAsJSON encodes a key iterator in JSON format
-func (iter *KeyIterator) MarshalAsJSON() ([]byte, error) {
-	return json.Marshal(&keyIteratorEx{
-		Seed:   iter.rng.ExportSeed(),
-		Offset: iter.offset,
-	})
-}
-
-// Unmarshal decodes a key iterator from a source byte slice
-func (iter *KeyIterator) UnmarshalFromJSON(src []byte) error {
-	itrEx := new(keyIteratorEx)
-	err := json.Unmarshal(src, itrEx)
-
-	if nil == err {
-		iter.Init(itrEx.Seed, itrEx.Offset)
+// Serialize encodes the key iterator as a integrated seed
+//	in form of seed||offset
+func (iter *KeyIterator) Serialize() []byte {
+	seed := iter.rng.ExportSeed()
+	seedLen := len(seed)
+	// append 4 bytes to the end to make space for the offset
+	for i := 0; i < 4; i++ {
+		seed = append(seed, byte(0))
 	}
 
-	return err
+	binary.BigEndian.PutUint32(seed[seedLen:], iter.offset)
+
+	return seed
 }
