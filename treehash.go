@@ -80,7 +80,7 @@ func (th *TreeHashStack) Top() *Node {
 
 // Update executes numOp updates on the instance, and
 //	add on the new leaf derived by keyItr if necessary
-func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.SkPkIterator) {
+func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.KeyIterator) {
 	for (numOp > 0) && !th.IsCompleted() {
 		// may have nodes at the same height to merge
 		if th.nodeStack.Len() >= 2 {

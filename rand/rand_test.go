@@ -35,7 +35,7 @@ func TestRand(t *testing.T) {
 	p := make([]byte, config.Size)
 	rng.Read(p)
 
-	rng2 := New(rng.TellMeSeed())
+	rng2 := New(rng.ExportSeed())
 	p2 := make([]byte, config.Size)
 	for i := 0; i < 2; i++ {
 		rng.Read(p)

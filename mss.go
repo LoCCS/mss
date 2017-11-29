@@ -16,7 +16,7 @@ type MerkleAgent struct {
 	//NumLeafUsed    uint32
 	auth           [][]byte
 	root           []byte
-	keyItr         *wots.SkPkIterator
+	keyItr         *wots.KeyIterator
 	treeHashStacks []*TreeHashStack
 }
 
@@ -30,7 +30,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	agent := new(MerkleAgent)
 	agent.H = H
 	agent.auth = make([][]byte, H)
-	agent.keyItr = wots.NewSkPkIterator(seed)
+	agent.keyItr = wots.NewKeyIterator(seed)
 	agent.treeHashStacks = make([]*TreeHashStack, H)
 
 	globalStack := NewTreeHashStack(0, H+1)

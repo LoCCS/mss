@@ -2,21 +2,34 @@ package rand
 
 import (
 	"crypto/rand"
-	"encoding/hex"
-	"fmt"
+	"hash"
 	"io"
 
 	"github.com/sammy00/mss/config"
 	"golang.org/x/crypto/sha3"
 )
 
-// Reader is a globally accessible PRNG instance
+// sha is the internal hash function to build the PRNG
+var sha hash.Hash
+
+// Reader is a globally accessible PRNG (pseudo random number generator) instance
 var Reader io.Reader
 
 // init initializes some relevant parameters
 func init() {
+	// initialize sha as sha3
+	sha = sha3.New256()
+
 	seed, _ := RandSeed()
 	Reader = New(seed)
+}
+
+// RandSeed generates a random seed of predefined bytes
+func RandSeed() ([]byte, error) {
+	seed := make([]byte, sha.Size())
+	_, err := rand.Read(seed)
+
+	return seed, err
 }
 
 // Rand produces a random randOTS each time by
@@ -34,48 +47,35 @@ func New(seed []byte) *Rand {
 	return rng
 }
 
-// Read reads min(len(p),config.Size) random bytes
-//	from the PRNG
+// Read reads min(len(p),config.Size) random bytes from the PRNG
 func (rng *Rand) Read(p []byte) (int, error) {
-	hashFunc := sha3.New256()
+	sha.Reset()
 
-	hashFunc.Write(rng.seed)
 	// update randOTS
-	randOTS := hashFunc.Sum(nil)
+	sha.Write(rng.seed)
+	randOTS := sha.Sum(nil)
 	sz := copy(p, randOTS)
 
 	// update seed
-	hashFunc.Write(randOTS)
-	randOTS = hashFunc.Sum(nil)
+	sha.Write(randOTS)
+	randOTS = sha.Sum(nil)
 	copy(rng.seed, randOTS)
 
 	return sz, nil
 }
 
-func (rng *Rand) TellMeSeed() []byte {
+//  ExportSeed exports the updated seed for next generation
+func (rng *Rand) ExportSeed() []byte {
 	seed := make([]byte, len(rng.seed))
 	copy(seed, rng.seed)
 
 	return seed
 }
 
-// Seed reset the PRNG to be seeded at the new seed
-func (rng *Rand) Seed(newSeed []byte) {
+// Seed uses provided seed to initialize the generator to a deterministic state
+func (rng *Rand) Seed(seed []byte) {
 	if nil == rng.seed {
 		rng.seed = make([]byte, config.Size)
 	}
-	copy(rng.seed, newSeed)
-}
-
-// String outputs the string representation of this PRNG
-func (rng *Rand) String() string {
-	return fmt.Sprintf("{ seed: %s }", hex.EncodeToString(rng.seed))
-}
-
-// RandSeed generates a random seed
-func RandSeed() ([]byte, error) {
-	seed := make([]byte, config.Size)
-	_, err := rand.Read(seed)
-
-	return seed, err
+	copy(rng.seed, seed)
 }
