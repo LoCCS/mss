@@ -53,6 +53,7 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 // Sign generates the signature for a message digest based on
 //	the given private key
 func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
+
 	blocks, err := hashToBlocks(hash)
 	if nil != err {
 		return nil, err
