@@ -4,13 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"math/big"
 
 	"github.com/sammy00/mss/config"
-)
-
-const (
-	W = 16 // number of bits to manipulate simultaneously
 )
 
 // PublicKey as container for public key
@@ -36,15 +31,14 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 	sk.x = make([][]byte, t)
 	sk.Y = make([][]byte, t)
 
-	applier := NewHashFuncApplier(bitMask(), config.HashFunc())
-
+	numIter := uint32(w - 1)
 	for i := range sk.x {
 		sk.x[i] = make([]byte, config.Size)
 		// make a rand x[i]
 		rand.Read(sk.x[i])
 
 		// derive the corresponding y[i]
-		sk.Y[i] = applier.Eval(sk.x[i], nil)
+		sk.Y[i] = HashChainEval(sk.x[i], numIter)
 	}
 
 	return sk, nil
@@ -53,42 +47,35 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 // Sign generates the signature for a message digest based on
 //	the given private key
 func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
-
-	blocks, err := hashToBlocks(hash)
-	if nil != err {
-		return nil, err
-	}
+	blocks := hashToBlocks(hash)
 	if len(sk.x) != len(blocks) {
-		return nil, errors.New("mismatched private key and b_i")
+		return nil, errors.New("mismatched secret key and b_i")
 	}
 
-	merkleSig := new(WinternitzSig)
-	merkleSig.sigma = make([][]byte, len(sk.x))
+	wtnSig := new(WinternitzSig)
+	wtnSig.sigma = make([][]byte, len(sk.x))
 
-	applier := NewHashFuncApplier(nil, config.HashFunc())
-	for i, x := range sk.x {
-		merkleSig.sigma[i] = applier.Eval(x, blocks[i])
+	for i := range sk.x {
+		wtnSig.sigma[i] = HashChainEval(sk.x[i], uint32(blocks[i]))
 	}
 
-	return merkleSig, nil
+	return wtnSig, nil
 }
 
 // Verify verifies the Merkle signature on a message digest
 //	against the claimed public key
-func Verify(pk *PublicKey, hash []byte, merkleSig *WinternitzSig) bool {
-	blocks, err := hashToBlocks(hash)
-	if (nil != err) || (len(pk.Y) != len(blocks)) ||
-		(len(pk.Y) != len(merkleSig.sigma)) {
+func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
+	blocks := hashToBlocks(hash)
+	if (len(pk.Y) != len(blocks)) || (len(pk.Y) != len(wtnSig.sigma)) {
 		return false
 	}
 
-	applier := NewHashFuncApplier(nil, config.HashFunc())
-	mask := bitMask()
-	numTimes := new(big.Int)
-	for i := range merkleSig.sigma {
-		// 2^W-1-b_i
-		numTimes.Sub(mask, blocks[i])
-		y := applier.Eval(merkleSig.sigma[i], numTimes)
+	// w-1
+	numIter := uint32(w - 1)
+	for i := range wtnSig.sigma {
+		// f^{w-1-b_i}(sigma[i])
+		y := HashChainEval(wtnSig.sigma[i], numIter-uint32(blocks[i]))
+
 		if !bytes.Equal(pk.Y[i], y) {
 			return false
 		}

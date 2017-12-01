@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	mathrand "math/rand"
 	"testing"
 
-	"github.com/sammy00/mss/config"
 	mrand "github.com/sammy00/mss/rand"
 )
 
@@ -33,28 +33,50 @@ func TestGenerateKey(t *testing.T) {
 	fmt.Println("}")
 }
 
-func TestMSS(t *testing.T) {
-	hashFunc := config.HashFunc()
+// TestWinternitzSig tests the signing/verifying of W-OTS
+func TestWinternitzSig(t *testing.T) {
+	hashFunc := HashFunc()
 	hashFunc.Write([]byte("hello Merkle signature scheme..."))
 	// compute digest
 	hash := hashFunc.Sum(nil)
-	// derive private keys
+
+	// generate keys
 	sk, _ := GenerateKey(mrand.Reader)
+	//fmt.Println(len(sk.x))
 
 	wtnSig, err := Sign(sk, hash)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	/*
-		fmt.Println("signature is {")
-		for _, sigma := range wtnSig.sigma {
-			fmt.Printf(" %s,\n", hex.EncodeToString(sigma))
-		}
-		fmt.Println("}")
-	*/
-
 	if !Verify(&sk.PublicKey, hash, wtnSig) {
+		t.Fatal("verification failed")
+	}
+}
+
+// TestWinternitzSig tests the signing/verifying of W-OTS
+//	with corrupted public key
+func TestWinternitzSigBadPk(t *testing.T) {
+	hashFunc := HashFunc()
+	hashFunc.Write([]byte("hello Merkle signature scheme..."))
+	// compute digest
+	hash := hashFunc.Sum(nil)
+
+	// generate keys
+	sk, _ := GenerateKey(mrand.Reader)
+	//fmt.Println(len(sk.x))
+
+	wtnSig, err := Sign(sk, hash)
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	pk := &sk.PublicKey
+	// corrupt some byte of pk
+	i, j := mathrand.Int()%len(pk.Y), mathrand.Int()%len(pk.Y[0])
+	pk.Y[i][j] ^= 0xff
+
+	if Verify(pk, hash, wtnSig) {
 		t.Fatal("verification failed")
 	}
 }
