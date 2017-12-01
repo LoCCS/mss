@@ -2,7 +2,6 @@ package rand
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,7 @@ func TestRandSeed(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if len(seed) != config.Size {
+		if len(seed) != sha.Size() {
 			t.Errorf("invalid lenght of seed, wants %v, got %v", config.Size, len(seed))
 		}
 	}
@@ -33,16 +32,17 @@ func TestRand(t *testing.T) {
 
 	rng := New(seed)
 	p := make([]byte, config.Size)
-	rng.Read(p)
+	//rng.Read(p)
+	rng.NextState()
 
 	rng2 := New(rng.ExportSeed())
-	p2 := make([]byte, config.Size)
+	p2 := make([]byte, sha.Size())
 	for i := 0; i < 2; i++ {
 		rng.Read(p)
 		rng2.Read(p2)
 
 		if !bytes.Equal(p, p2) {
-			t.Fatalf("wants %s, got %s", hex.EncodeToString(p), hex.EncodeToString(p2))
+			t.Fatalf("wants %x, got %x", p, p2)
 		}
 	}
 }

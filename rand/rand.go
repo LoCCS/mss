@@ -5,7 +5,6 @@ import (
 	"hash"
 	"io"
 
-	"github.com/sammy00/mss/config"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -32,34 +31,56 @@ func RandSeed() ([]byte, error) {
 	return seed, err
 }
 
-// Rand produces a random randOTS each time by
+// Rand produces a random seedOTS each time by
 //	updating
-//		randOTS=hash(seed)
-//		seed=hash(seed||randOTS)
+//		seedOTS_0=hash(seed_i)
+//		seed_{i+1}=hash(seed_i||seedOTS_0)
+//		seedOTS_{j+1} = hash(seedOTS_j)
 type Rand struct {
-	seed []byte
+	seed    []byte // state seed
+	seedOTS []byte // one-time seed
 }
 
 // New makes PRNG instance based on the given seed
 func New(seed []byte) *Rand {
 	rng := new(Rand)
 	rng.Seed(seed)
+
 	return rng
+}
+
+// NextState updates the state seed after updating, we should have
+//		* seedOTS_0	= hash(seed_i)
+//		* seed_{i+1}= hash(seed_i||seedOTS_0)
+func (rng *Rand) NextState() {
+	// seed = hash(seed||hash(seed))
+	sha.Reset()
+	sha.Write(rng.seed)
+	sha.Write(sha.Sum(nil))
+	rng.seed = sha.Sum(nil)
+
+	// seedOTS = hash(seed)
+	sha.Reset()
+	sha.Write(rng.seed)
+	rng.seedOTS = sha.Sum(nil)
+
+	// don't forget to clear up the internal state of sha
+	sha.Reset()
 }
 
 // Read reads min(len(p),config.Size) random bytes from the PRNG
 func (rng *Rand) Read(p []byte) (int, error) {
+	// next seed for one-time use
+	//	seedOTS = hash(seedOTS)
 	sha.Reset()
+	sha.Write(rng.seedOTS)
+	rng.seedOTS = sha.Sum(nil)
 
-	// update randOTS
-	sha.Write(rng.seed)
-	randOTS := sha.Sum(nil)
-	sz := copy(p, randOTS)
+	// fill up p
+	sz := copy(p, rng.seedOTS)
 
-	// update seed
-	sha.Write(randOTS)
-	randOTS = sha.Sum(nil)
-	copy(rng.seed, randOTS)
+	// clear up the internal state of sha
+	sha.Reset()
 
 	return sz, nil
 }
@@ -75,7 +96,16 @@ func (rng *Rand) ExportSeed() []byte {
 // Seed uses provided seed to initialize the generator to a deterministic state
 func (rng *Rand) Seed(seed []byte) {
 	if nil == rng.seed {
-		rng.seed = make([]byte, config.Size)
+		rng.seed = make([]byte, sha.Size())
 	}
+
 	copy(rng.seed, seed)
+
+	// initialize seedOTS = hash(seed)
+	sha.Reset()
+	sha.Write(rng.seed)
+	rng.seedOTS = sha.Sum(nil)
+
+	// clear the internal state of sha to avoid state leakage
+	sha.Reset()
 }
