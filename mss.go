@@ -5,8 +5,9 @@ import (
 	"errors"
 	"math"
 
-	"github.com/sammy00/mss/config"
-	wots "github.com/sammy00/mss/ots/winternitz"
+	"github.com/LoCCS/mss/config"
+	"github.com/LoCCS/mss/rand"
+	wots "github.com/LoCCS/mss/ots/winternitz"
 )
 
 // MerkleAgent implements a agent working
@@ -16,8 +17,10 @@ type MerkleAgent struct {
 	//NumLeafUsed    uint32
 	auth           [][]byte
 	root           []byte
+	seed0          []byte
 	keyItr         *wots.KeyIterator
 	treeHashStacks []*TreeHashStack
+	stackIterators []*wots.KeyIterator
 }
 
 // NewMerkleAgent makes a fresh Merkle signing routine
@@ -31,7 +34,9 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	agent.H = H
 	agent.auth = make([][]byte, H)
 	agent.keyItr = wots.NewKeyIterator(seed)
+	agent.seed0 = seed
 	agent.treeHashStacks = make([]*TreeHashStack, H)
+	agent.stackIterators = make([]*wots.KeyIterator, H)
 
 	// back up the initial seed for later recovery
 	integatedSeed := agent.keyItr.Serialize()
@@ -41,9 +46,12 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 		globalStack.Update(1, agent.keyItr)
 
 		agent.treeHashStacks[h] = NewTreeHashStack(0, h)
-		agent.treeHashStacks[h].nodeStack.Push(globalStack.Top())
 
-		globalStack.Update((1<<(h+1))-1, agent.keyItr)
+		agent.treeHashStacks[h].nodeStack.Push(globalStack.Top())
+		agent.treeHashStacks[h].SetLeaf(1 << h)
+		agent.stackIterators[h] = nil
+
+		globalStack.Update((1 << (h + 1)) - 1, agent.keyItr)
 		agent.auth[h] = make([]byte, len(globalStack.Top().nu))
 		copy(agent.auth[h], globalStack.Top().nu)
 	}
@@ -65,17 +73,18 @@ func (agent *MerkleAgent) refreshAuth() {
 	for h := uint32(0); h < agent.H; h++ {
 		pow2Toh := uint32(1 << h)
 		// nextLeaf % 2^h == 0
-		if 0 == nextLeaf&pow2Toh {
+		if 0 == nextLeaf & (pow2Toh - 1) {
 			copy(agent.auth[h], agent.treeHashStacks[h].Top().nu)
 			startingLeaf := (nextLeaf + pow2Toh) ^ pow2Toh
 			agent.treeHashStacks[h].Init(startingLeaf, h)
+			agent.stackIterators[h] = wots.NewKeyIterator(agent.GetSeedN(startingLeaf))
 		}
 	}
 }
 
 // refreshTreeHashStacks updates stack for next use
 func (agent *MerkleAgent) refreshTreeHashStacks() {
-	numOp := 2*agent.H - 1
+	numOp := 2 * agent.H - 1
 	for i := uint32(0); i < numOp; i++ {
 		globalLowest := uint32(math.MaxUint32)
 		var focus uint32
@@ -86,7 +95,7 @@ func (agent *MerkleAgent) refreshTreeHashStacks() {
 				focus = h
 			}
 		}
-		agent.treeHashStacks[focus].Update(1, agent.keyItr)
+		agent.treeHashStacks[focus].Update(1, agent.stackIterators[focus])
 	}
 }
 
@@ -116,9 +125,6 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 		return nil, nil, errors.New("unexpected error occurs during signing")
 	}
 
-	// update auth path
-	agent.Traverse()
-
 	// fill in the public key deriving leaf
 	merkleSig.LeafPk = &sk.PublicKey
 	// copy the auth path
@@ -128,11 +134,14 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 		copy(merkleSig.Auth[i], agent.auth[i])
 	}
 
+	// update auth path
+	agent.Traverse()
+
 	return sk, merkleSig, nil
 }
 
 // Verify verifies a Merkle signature
-func Verify(pk *wots.PublicKey, hash []byte, merkleSig *MerkleSig) bool {
+func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 	if (nil == merkleSig) || (!wots.Verify(merkleSig.LeafPk, hash, merkleSig.WtnSig)) {
 		return false
 	}
@@ -142,10 +151,11 @@ func Verify(pk *wots.PublicKey, hash []byte, merkleSig *MerkleSig) bool {
 	idx := merkleSig.Leaf
 	hashFunc := config.HashFunc()
 
+
 	parentHash := wots.HashPk(merkleSig.LeafPk)
 	for h := 0; h < H; h++ {
 		hashFunc.Reset()
-		if 1 == idx%2 { // idx is odd, i.e., a right node
+		if 1 == idx % 2 { // idx is odd, i.e., a right node
 			hashFunc.Write(merkleSig.Auth[h])
 			hashFunc.Write(parentHash)
 		} else {
@@ -154,8 +164,22 @@ func Verify(pk *wots.PublicKey, hash []byte, merkleSig *MerkleSig) bool {
 		}
 		// level up
 		parentHash = hashFunc.Sum(nil)
-		idx = (idx >> 2)
+		idx = idx >> 1
 	}
 
-	return bytes.Equal(parentHash, wots.HashPk(pk))
+	return bytes.Equal(parentHash, root)
+}
+
+// return the verification root
+func (agent *MerkleAgent) Root() []byte{
+	return agent.root
+}
+
+// get the nth Seed
+func (agent *MerkleAgent) GetSeedN(n uint32) []byte{
+	rand := rand.New(agent.seed0)
+	for i := uint32(0); i < n; i++ {
+		rand.NextState()
+	}
+	return rand.ExportSeed()
 }

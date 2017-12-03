@@ -7,7 +7,7 @@ import (
 	mathrand "math/rand"
 	"testing"
 
-	mrand "github.com/sammy00/mss/rand"
+	mrand "github.com/LoCCS/mss/rand"
 )
 
 // TestGenerateKey tests the generation of a one-time key pair (sk,pk)

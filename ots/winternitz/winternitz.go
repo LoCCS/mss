@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/sammy00/mss/config"
+	"github.com/LoCCS/mss/config"
 )
 
 // PublicKey as container for public key

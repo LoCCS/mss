@@ -3,7 +3,7 @@ package winternitz
 import (
 	"encoding/binary"
 
-	"github.com/sammy00/mss/rand"
+	"github.com/LoCCS/mss/rand"
 )
 
 // KeyIterator is a iterator to produce a key chain for
@@ -36,7 +36,9 @@ func (iter *KeyIterator) Init(integatedSeed []byte) bool {
 // Next estimates and returns the next sk-pk pair
 func (iter *KeyIterator) Next() (*PrivateKey, error) {
 	iter.offset++
-	return GenerateKey(iter.rng)
+	keyPair, err := GenerateKey(iter.rng)
+	iter.rng.NextState()
+	return keyPair, err
 }
 
 // Offset returns 0-based index of the **next** running iteration

@@ -1,6 +1,6 @@
 package mss
 
-import "github.com/sammy00/mss/config"
+import "github.com/LoCCS/mss/config"
 
 // merge estimates the hash for (hashLef||hashRight)
 func merge(hashLeft, hashRight []byte) []byte {

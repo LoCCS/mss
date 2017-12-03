@@ -72,5 +72,5 @@ func (s *Stack) Len() int {
 
 // Empty returns true if the stack is empty
 func (s *Stack) Empty() bool {
-	return (0 == s.size)
+	return 0 == s.size
 }

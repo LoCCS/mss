@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sammy00/mss/config"
+	"github.com/LoCCS/mss/config"
 )
 
 // TestRandSeed tests the generation of random seeds

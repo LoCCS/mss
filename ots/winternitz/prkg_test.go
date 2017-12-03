@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/sammy00/mss/rand"
+	"github.com/LoCCS/mss/rand"
 )
 
 // TestKeyIteratorSerialize checks the serialization/deserialization

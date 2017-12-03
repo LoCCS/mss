@@ -3,7 +3,7 @@ package winternitz
 import (
 	"testing"
 
-	mrand "github.com/sammy00/mss/rand"
+	mrand "github.com/LoCCS/mss/rand"
 )
 
 func BenchmarkGenerateKey(b *testing.B) {

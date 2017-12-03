@@ -1,12 +1,11 @@
 package mss
 
 import (
-	"errors"
 	"fmt"
 	"math"
 
-	"github.com/sammy00/mss/container/stack"
-	"github.com/sammy00/mss/ots/winternitz"
+	"github.com/LoCCS/mss/container/stack"
+	"github.com/LoCCS/mss/ots/winternitz"
 )
 
 // Node is a node in the Merkle tree
@@ -30,6 +29,10 @@ type TreeHashStack struct {
 	nodeStack *stack.Stack // stacks store nodes for each Merkle sub-tree of height from 0 to H-1
 }
 
+func (th *TreeHashStack) SetLeaf(leaf uint32) {
+	th.leaf = leaf
+}
+
 // NewTreeHashStack makes a new tree hash instance
 func NewTreeHashStack(startingLeaf, h uint32) *TreeHashStack {
 	treeHashStack := new(TreeHashStack)
@@ -41,11 +44,8 @@ func NewTreeHashStack(startingLeaf, h uint32) *TreeHashStack {
 // Init initializes the tree hash instance to target specific height
 //	and the range of leaves
 func (th *TreeHashStack) Init(startingLeaf, h uint32) error {
-	if 1 != startingLeaf%2 {
-		return errors.New("invalid index of starting leaf")
-	}
 
-	th.leaf, th.leafUpper, th.height = startingLeaf, startingLeaf+(1<<h), h
+	th.leaf, th.leafUpper, th.height = startingLeaf, startingLeaf + (1 << h), h
 	//th.leaf, th.height = startingLeaf, h
 	th.nodeStack = stack.New() // clear up the stack
 
@@ -54,7 +54,7 @@ func (th *TreeHashStack) Init(startingLeaf, h uint32) error {
 
 // IsCompleted checks if the tree hash instance has completed
 func (th *TreeHashStack) IsCompleted() bool {
-	return (th.leaf >= th.leafUpper) && (!th.nodeStack.Empty())
+	return (th.leaf >= th.leafUpper) && (th.nodeStack.Peek().(*Node).height == th.height)
 }
 
 // LowestTailHeight returns the lowest height of tail nodes
@@ -94,7 +94,6 @@ func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.KeyIterator) {
 				th.nodeStack.Pop()
 
 				th.nodeStack.Push(&Node{node1.height + 1, merge(node2.nu, node1.nu)})
-
 				numOp--
 				continue
 			}

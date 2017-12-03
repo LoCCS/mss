@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/sammy00/mss/config"
+	"github.com/LoCCS/mss/config"
 )
 
 func TestMerge(t *testing.T) {
