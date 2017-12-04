@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	H = 10 // the height of the merkle tree
+	H = 20 // the height of the merkle tree
 )
 
 func TestMSS(t *testing.T) {

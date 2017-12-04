@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/LoCCS/mss/container/stack"
-	"github.com/LoCCS/mss/ots/winternitz"
 )
 
 // Node is a node in the Merkle tree
@@ -37,7 +36,6 @@ func (th *TreeHashStack) SetLeaf(leaf uint32) {
 func NewTreeHashStack(startingLeaf, h uint32) *TreeHashStack {
 	treeHashStack := new(TreeHashStack)
 	treeHashStack.Init(startingLeaf, h)
-
 	return treeHashStack
 }
 
@@ -80,7 +78,8 @@ func (th *TreeHashStack) Top() *Node {
 
 // Update executes numOp updates on the instance, and
 //	add on the new leaf derived by keyItr if necessary
-func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.KeyIterator) {
+func (th *TreeHashStack) Update(numOp uint32, nodeHouse [][]byte ){
+
 	for (numOp > 0) && !th.IsCompleted() {
 		// may have nodes at the same height to merge
 		if th.nodeStack.Len() >= 2 {
@@ -101,8 +100,11 @@ func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.KeyIterator) {
 
 		// invoke key generator to make a new leaf and
 		//	add the new leaf to S
-		sk, _ := keyItr.Next()
-		th.nodeStack.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
+		if th.leaf >= uint32(len(nodeHouse)){
+			th.nodeStack.Push(&Node{0, nodeHouse[0]})
+		} else {
+			th.nodeStack.Push(&Node{0, nodeHouse[th.leaf]})
+		}
 		th.leaf++
 		numOp--
 	}
