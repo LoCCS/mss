@@ -86,8 +86,10 @@ func (prkg *KeyIterator) Init(compositeSeed []byte) bool {
 
 // Next estimates and returns the next sk-pk pair
 func (prkg *KeyIterator) Next() (*PrivateKey, error) {
+	prkg.WtnOpts.SetKeyIdx(prkg.offset)
+	keyPair, err := GenerateKey(prkg.WtnOpts, prkg.rng)
+
 	prkg.offset++
-	keyPair, err := GenerateKey(DummyWtnOpts, prkg.rng)
 	prkg.rng.NextState()
 	return keyPair, err
 }

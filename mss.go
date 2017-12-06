@@ -6,8 +6,8 @@ import (
 	"math"
 
 	"github.com/LoCCS/mss/config"
-	"github.com/LoCCS/mss/rand"
 	wots "github.com/LoCCS/mss/ots/winternitz"
+	"github.com/LoCCS/mss/rand"
 )
 
 // MerkleAgent implements a agent working
@@ -51,7 +51,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 		agent.treeHashStacks[h].SetLeaf(1 << h)
 		agent.stackIterators[h] = nil
 
-		globalStack.Update((1 << (h + 1)) - 1, agent.keyItr)
+		globalStack.Update((1<<(h+1))-1, agent.keyItr)
 		agent.auth[h] = make([]byte, len(globalStack.Top().nu))
 		copy(agent.auth[h], globalStack.Top().nu)
 	}
@@ -73,7 +73,7 @@ func (agent *MerkleAgent) refreshAuth() {
 	for h := uint32(0); h < agent.H; h++ {
 		pow2Toh := uint32(1 << h)
 		// nextLeaf % 2^h == 0
-		if 0 == nextLeaf & (pow2Toh - 1) {
+		if 0 == nextLeaf&(pow2Toh-1) {
 			copy(agent.auth[h], agent.treeHashStacks[h].Top().nu)
 			startingLeaf := (nextLeaf + pow2Toh) ^ pow2Toh
 			agent.treeHashStacks[h].Init(startingLeaf, h)
@@ -84,7 +84,7 @@ func (agent *MerkleAgent) refreshAuth() {
 
 // refreshTreeHashStacks updates stack for next use
 func (agent *MerkleAgent) refreshTreeHashStacks() {
-	numOp := 2 * agent.H - 1
+	numOp := 2*agent.H - 1
 	for i := uint32(0); i < numOp; i++ {
 		globalLowest := uint32(math.MaxUint32)
 		var focus uint32
@@ -151,11 +151,10 @@ func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 	idx := merkleSig.Leaf
 	hashFunc := config.HashFunc()
 
-
 	parentHash := wots.HashPk(merkleSig.LeafPk)
 	for h := 0; h < H; h++ {
 		hashFunc.Reset()
-		if 1 == idx % 2 { // idx is odd, i.e., a right node
+		if 1 == idx%2 { // idx is odd, i.e., a right node
 			hashFunc.Write(merkleSig.Auth[h])
 			hashFunc.Write(parentHash)
 		} else {
@@ -171,12 +170,12 @@ func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 }
 
 // return the verification root
-func (agent *MerkleAgent) Root() []byte{
+func (agent *MerkleAgent) Root() []byte {
 	return agent.root
 }
 
 // get the nth Seed
-func (agent *MerkleAgent) GetSeedN(n uint32) []byte{
+func (agent *MerkleAgent) GetSeedN(n uint32) []byte {
 	rand := rand.New(agent.seed0)
 	for i := uint32(0); i < n; i++ {
 		rand.NextState()
