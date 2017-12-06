@@ -1,6 +1,6 @@
 # Merkle Signature Scheme  
-![mss logo](https://img.shields.io/badge/mss-v0.5-blue.svg) 
-![build status](https://img.shields.io/badge/build-failure-red.svg)
+![mss logo](https://img.shields.io/badge/mss-v0.9-blue.svg) 
+![build status](https://img.shields.io/badge/build-failure-red.svg)  
 
 Copyright (c) 2017-2018 LoCCS.  
 Project to implement the Merkle signature scheme (MSS) based on the W-OTS+.   

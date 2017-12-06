@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"math"
-	"math/rand"
 
 	"github.com/LoCCS/mss/config"
 	wots "github.com/LoCCS/mss/ots/winternitz"
+	"github.com/LoCCS/mss/rand"
 )
 
 // MerkleAgent implements a agent working
@@ -40,9 +40,10 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	rng := rand.New(seed)
 
 	for i := 0; i < (1 << H); i++ {
+		// TODO: adapt the *WtnOpts
 		sk, _ := wots.GenerateKey(rng)
 		rng.NextState()
-		agent.nodeHouse[i] = wots.HashPk(&sk.PublicKey)
+		agent.nodeHouse[i] = HashPk(&sk.PublicKey)
 	}
 
 	globalStack := NewTreeHashStack(0, H+1)
@@ -120,6 +121,7 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 	merkleSig := new(MerkleSig)
 	merkleSig.Leaf = agent.leaf
 
+	// TODO: adapt for *WtnOpts
 	sk, err := wots.GenerateKey(agent.rng)
 	agent.rng.NextState()
 	agent.leaf++

@@ -9,11 +9,7 @@ import (
 )
 
 const (
-<<<<<<< HEAD
 	H = 5 // the height of the merkle tree
-=======
-	H = 20 // the height of the merkle tree
->>>>>>> origin/master
 )
 
 func TestMSS(t *testing.T) {
