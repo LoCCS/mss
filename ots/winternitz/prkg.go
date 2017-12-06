@@ -1,74 +1,129 @@
 package winternitz
 
 import (
+	"bytes"
+	"encoding/binary"
+	"io"
+
 	"github.com/LoCCS/mss/rand"
 )
 
-// KeyIterator is a iterator to produce a key chain for
+// KeyIterator is a prkgator to produce a key chain for
 //	user based on a seed
 type KeyIterator struct {
 	rng *rand.Rand
-	// the 0-based index of next running iteration
+	// the 0-based index of next running prkgation
 	//	w.r.t the initial genesis seed
 	offset uint32
 	// options specifying stuff like nonce for
 	//	randomizing hash function
-	//*WtnOpts
+	*WtnOpts
 }
 
-// NewKeyIterator makes a key pair iterator
+// NewKeyIterator makes a key pair prkgator
 func NewKeyIterator(compactSeed []byte) *KeyIterator {
-	return &KeyIterator{
-		rng:    rand.New(compactSeed),
-		offset: 0,
-	}
+	prkg := new(KeyIterator)
+
+	prkg.rng = rand.New(compactSeed)
+	prkg.offset = 0
+	prkg.WtnOpts = NewWtnOpts(SecurityLevel256)
+
+	return prkg
 }
 
-// Init resets the KeyIterator
-func (iter *KeyIterator) Init(compositeSeed []byte) bool {
-	seedLen := len(compositeSeed) - 4
-	if seedLen <= 0 {
+// Init initialises the prkgator with the compsiste seed
+//	exported by Serialize()
+func (prkg *KeyIterator) Init(compositeSeed []byte) bool {
+	buf := bytes.NewBuffer(compositeSeed)
+
+	var fieldLen uint8
+	// 1. len(seed)
+	if err := binary.Read(buf, binary.BigEndian,
+		&fieldLen); (nil != err) && (0 == fieldLen) {
 		return false
 	}
+	// 2. compactSeed
+	compactSeed := make([]byte, fieldLen)
+	if err := binary.Read(buf, binary.BigEndian,
+		compactSeed); nil != err {
+		return false
+	}
+	// initialise rng
+	prkg.rng = rand.New(compactSeed)
 
-	iter.rng = rand.New(compositeSeed[:seedLen])
-	iter.offset = uint32(GetUint64(compositeSeed[seedLen:]))
+	// initialise WtnOpts if needed before going on
+	if nil == prkg.WtnOpts {
+		prkg.WtnOpts = NewWtnOpts(SecurityLevel)
+	}
+
+	// 3. offset
+	var offset uint32
+	if err := binary.Read(buf, binary.BigEndian,
+		&offset); nil != err {
+		return false
+	}
+	// feed offset to WtnOpts
+	prkg.offset = offset
+	prkg.SetKeyIdx(prkg.offset)
+
+	// 4. len(nonce)
+	fieldLen = 0
+	if err := binary.Read(buf, binary.BigEndian,
+		&fieldLen); (nil != err) && (0 == fieldLen) {
+		return false
+	}
+	// 5. nonce
+	nonce := make([]byte, fieldLen)
+	if err := binary.Read(buf, binary.BigEndian,
+		nonce); io.ErrUnexpectedEOF == err {
+		return false
+	}
+	// feed nonce to WtnOpts
+	prkg.WtnOpts.SetNonce(nonce)
 
 	return true
 }
 
 // Next estimates and returns the next sk-pk pair
-func (iter *KeyIterator) Next() (*PrivateKey, error) {
-	iter.offset++
-	keyPair, err := GenerateKey(DummyWtnOpts, iter.rng)
-	iter.rng.NextState()
+func (prkg *KeyIterator) Next() (*PrivateKey, error) {
+	prkg.offset++
+	keyPair, err := GenerateKey(DummyWtnOpts, prkg.rng)
+	prkg.rng.NextState()
 	return keyPair, err
 }
 
-// Offset returns 0-based index of the **next** running iteration
-func (iter *KeyIterator) Offset() uint32 {
-	return iter.offset
+// Offset returns 0-based index of the **next** running prkgation
+func (prkg *KeyIterator) Offset() uint32 {
+	return prkg.offset
 }
 
 // Seed returns the internal updated seed for usage
-//	such as saving state of the iterator
+//	such as saving state of the prkgator
 // !!!TBR: to be removed
-func (iter *KeyIterator) Seed() []byte {
-	return iter.rng.ExportSeed()
+func (prkg *KeyIterator) Seed() []byte {
+	return prkg.rng.ExportSeed()
 }
 
-// Serialize encodes the key iterator as a integrated seed
-//	in form of seed||offset
-func (iter *KeyIterator) Serialize() []byte {
-	seed := iter.rng.ExportSeed()
-	seedLen := len(seed)
-	// append 4 bytes to the end to make space for the offset
-	for i := 0; i < 4; i++ {
-		seed = append(seed, byte(0))
-	}
+// Serialize encodes the key iterator as
+//	+---------------------------------------------+
+//	|	len(seed)||seed||offset||len(nonce)||nonce	|
+//	+---------------------------------------------+
+func (prkg *KeyIterator) Serialize() []byte {
+	buf := new(bytes.Buffer)
 
-	//binary.BigEndian.PutUint32(seed[seedLen:], iter.offset)
-	ToBytes(seed[seedLen:], uint64(iter.offset))
+	seed := prkg.rng.ExportSeed()
+	// len(seed)
+	binary.Write(buf, binary.BigEndian, uint8(len(seed)))
+	// seed
+	binary.Write(buf, binary.BigEndian, seed)
 
-	return seed
+	// offset
+	binary.Write(buf, binary.BigEndian, prkg.offset)
+
+	// len(nonce)
+	binary.Write(buf, binary.BigEndian, uint8(prkg.SecurityLevel()))
+	// nonce
+	binary.Write(buf, binary.BigEndian, prkg.Nonce())
+
+	return buf.Bytes()
 }

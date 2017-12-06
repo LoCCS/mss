@@ -8,22 +8,23 @@ import (
 )
 
 // TestKeyIteratorSerialize checks the serialization/deserialization
-//	between KeyIterator and bytes sequence
-func TestKeyIteratorSerialization(t *testing.T) {
+//	between KeyIterator and bytes slice
+func TestKeyIteratorSerialize(t *testing.T) {
 	seed, _ := rand.RandSeed()
 
-	iter := NewKeyIterator(seed)
-	iter.Next()
+	prkg := NewKeyIterator(seed)
+	prkg.Next()
 
-	compositeSeed := iter.Serialize()
+	compositeSeed := prkg.Serialize()
 
-	iter2 := new(KeyIterator)
-	if iter2.Init(compositeSeed) {
-		compositeSeed2 := iter2.Serialize()
+	prkg2 := new(KeyIterator)
+	if !prkg2.Init(compositeSeed) {
+		t.Fatal("unexpected error during calling KeyIterator.Init()")
+	}
 
-		if !bytes.Equal(compositeSeed, compositeSeed2) {
-			t.Fatal("error in MarshalAssJSON/UnmarshalFromJSON")
-		}
+	compositeSeed2 := prkg2.Serialize()
+	if !bytes.Equal(compositeSeed, compositeSeed2) {
+		t.Fatalf("want %x, got %x", compositeSeed, compositeSeed2)
 	}
 }
 
