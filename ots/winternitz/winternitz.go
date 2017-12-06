@@ -55,7 +55,6 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 //	the given private key
 //	the opts should have the same seed and key-pair index and
 //	as that of generating key pairs
-//func Sign(opts *WtnOpts, sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	blocks := hashToBlocks(hash)
 	if len(sk.x) != len(blocks) {
@@ -80,21 +79,20 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 //	against the claimed public key and
 //	the opts should have the same seed and key-pair index
 //	as that of generating key pairs
-//func Verify(opts *WtnOpts, pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	blocks := hashToBlocks(hash)
 	if (len(pk.Y) != len(blocks)) || (len(pk.Y) != len(wtnSig.sigma)) {
 		return false
 	}
 
-	// w-1
-	wBaseMax := uint32((1 << w) - 1)
+	// 2^w-1
+	wmo := uint32((1 << w) - 1)
 
 	opts := pk.Clone()
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
 		// f^{w-1-b_i}(sigma_i)
-		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]), wBaseMax-uint32(blocks[i]), opts)
+		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]), wmo-uint32(blocks[i]), opts)
 
 		if !bytes.Equal(pk.Y[i], y) {
 			return false

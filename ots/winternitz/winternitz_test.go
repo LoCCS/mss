@@ -4,12 +4,13 @@ import (
 	mathrand "math/rand"
 	"testing"
 
+	"github.com/LoCCS/mss/config"
 	mssrand "github.com/LoCCS/mss/rand"
 )
 
 // TestWinternitzSig tests the signing/verifying of W-OTS
 func TestWinternitzSig(t *testing.T) {
-	hashFunc := HashFunc()
+	hashFunc := config.HashFunc()
 	hashFunc.Write([]byte("hello Merkle signature scheme..."))
 	// compute digest
 	hash := hashFunc.Sum(nil)
@@ -30,7 +31,7 @@ func TestWinternitzSig(t *testing.T) {
 // TestWinternitzSig tests the signing/verifying of W-OTS
 //	with corrupted public key
 func TestWinternitzSigBadPk(t *testing.T) {
-	hashFunc := HashFunc()
+	hashFunc := config.HashFunc()
 	hashFunc.Write([]byte("Testing Winternitz One-Time Signature..."))
 	// compute digest
 	hash := hashFunc.Sum(nil)
