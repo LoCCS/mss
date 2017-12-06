@@ -4,6 +4,22 @@ import (
 	"math"
 )
 
+// GetUint64 decodes a uint64 from buf in big-endian order
+//	if len(buf)>4, only the first 4 bytes will be decoded
+func GetUint64(buf []byte) uint64 {
+	var x uint64
+
+	for i := range buf {
+		if i >= 8 {
+			break
+		}
+
+		x = (x << 8) | uint64(buf[i])
+	}
+
+	return x
+}
+
 // ToBaseW outputs an array `out` of integers between 0 and (base - 1)
 //	len(out) is REQUIRED to be <=8*len(X)/log2(base)
 //	and base should be either 4 or 16

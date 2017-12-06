@@ -3,8 +3,19 @@ package winternitz
 import (
 	"bytes"
 	"math"
+	"math/rand"
 	"testing"
 )
+
+func TestGetUint64(t *testing.T) {
+	buf := []byte{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12}
+	want := uint64(0x123456789abcdef0)
+
+	x := GetUint64(buf)
+	if x != want {
+		t.Fatalf("want %x, got %x", want, x)
+	}
+}
 
 // TestToBaseW checks the correctness of ToBaseW()
 func TestToBaseW(t *testing.T) {
@@ -45,6 +56,20 @@ func TestToBytes(t *testing.T) {
 	yWants := []byte{0x01, 0x23, 0x45, 0x67}
 	if !bytes.Equal(yBytesBE, yWants) {
 		t.Fatal("invalid output: wants %x, got %x", yWants, yBytesBE)
+	}
+}
+
+// TestPutBytesAndGetUint64 ensures GetUint64() is the inverse to ToBytes()
+func TestPutBytesAndGetUint64(t *testing.T) {
+	x := rand.Uint64()
+
+	y := make([]byte, 8)
+	ToBytes(y, x)
+
+	z := GetUint64(y)
+
+	if x != z {
+		t.Fatalf("want %x, got %x", x, z)
 	}
 }
 
