@@ -45,7 +45,7 @@ func NewTreeHashStack(startingLeaf, h uint32) *TreeHashStack {
 //	and the range of leaves
 func (th *TreeHashStack) Init(startingLeaf, h uint32) error {
 
-	th.leaf, th.leafUpper, th.height = startingLeaf, startingLeaf + (1 << h), h
+	th.leaf, th.leafUpper, th.height = startingLeaf, startingLeaf+(1<<h), h
 	//th.leaf, th.height = startingLeaf, h
 	th.nodeStack = stack.New() // clear up the stack
 
@@ -102,7 +102,7 @@ func (th *TreeHashStack) Update(numOp uint32, keyItr *winternitz.KeyIterator) {
 		// invoke key generator to make a new leaf and
 		//	add the new leaf to S
 		sk, _ := keyItr.Next()
-		th.nodeStack.Push(&Node{0, winternitz.HashPk(&sk.PublicKey)})
+		th.nodeStack.Push(&Node{0, HashPk(&sk.PublicKey)})
 		th.leaf++
 		numOp--
 	}

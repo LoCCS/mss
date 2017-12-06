@@ -151,7 +151,8 @@ func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 	idx := merkleSig.Leaf
 	hashFunc := config.HashFunc()
 
-	parentHash := wots.HashPk(merkleSig.LeafPk)
+	//parentHash := wots.HashPk(merkleSig.LeafPk)
+	parentHash := HashPk(merkleSig.LeafPk)
 	for h := 0; h < H; h++ {
 		hashFunc.Reset()
 		if 1 == idx%2 { // idx is odd, i.e., a right node

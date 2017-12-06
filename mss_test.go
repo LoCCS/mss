@@ -1,8 +1,8 @@
 package mss
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/LoCCS/mss/rand"
@@ -17,7 +17,7 @@ func TestMSS(t *testing.T) {
 	agentStart := time.Now()
 	merkleAgent, err := NewMerkleAgent(H, seed)
 	agentTime := time.Since(agentStart)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("Time on new merkle Agent with height %v : %v\n", H, agentTime)
@@ -28,9 +28,9 @@ func TestMSS(t *testing.T) {
 	var maxver time.Duration
 	success := 0
 	failure := 0
-	for i := 0; i < 1 << H; i++{
+	for i := 0; i < 1<<H; i++ {
 
-		if i % 1000 == 0 && i > 0{
+		if i%1000 == 0 && i > 0 {
 			fmt.Printf("Success %v, failure %v\n", success, failure)
 		}
 
@@ -38,11 +38,11 @@ func TestMSS(t *testing.T) {
 		signStart := time.Now()
 		_, sig, err := Sign(merkleAgent, message)
 		signTime := time.Since(signStart)
-		if err != nil{
+		if err != nil {
 			fmt.Println(err)
 		}
 		signSum += signTime
-		if signTime > maxsig{
+		if signTime > maxsig {
 			maxsig = signTime
 			fmt.Printf("Currently max sig time: %v\n", maxsig)
 		}
@@ -54,23 +54,22 @@ func TestMSS(t *testing.T) {
 		verifyTime := time.Since(verifyStart)
 		verifySum += verifyTime
 		//fmt.Printf("Verify in %v\n", verifyTime)
-		if verifyTime > maxver{
+		if verifyTime > maxver {
 			maxver = verifyTime
 			fmt.Printf("Currently max verify time: %v\n", maxver)
 		}
-		if result{
+		if result {
 			success++
 		} else {
 			failure++
 		}
 
-
 	}
 	fmt.Println()
 	fmt.Printf("Success %v, failure %v\n", success, failure)
 	fmt.Printf("Merkle agent building time %v : %v\n", H, agentTime)
-	fmt.Printf("Average signature time: %v\n", signSum / (1 << H))
+	fmt.Printf("Average signature time: %v\n", signSum/(1<<H))
 	fmt.Printf("Max signature time: %v\n", maxsig)
-	fmt.Printf("Average verification time: %v\n", verifySum / (1 << H))
+	fmt.Printf("Average verification time: %v\n", verifySum/(1<<H))
 	fmt.Printf("Max verify time: %v\n", maxver)
 }
