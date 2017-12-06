@@ -39,7 +39,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	agent.stackIterators = make([]*wots.KeyIterator, H)
 
 	// back up the initial seed for later recovery
-	integatedSeed := agent.keyItr.Serialize()
+	compositeSeed := agent.keyItr.Serialize()
 
 	globalStack := NewTreeHashStack(0, H+1)
 	for h := uint32(0); h < H; h++ {
@@ -61,7 +61,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	copy(agent.root, globalStack.Top().nu)
 
 	// don't forget to reset the key iterator
-	agent.keyItr.Init(integatedSeed)
+	agent.keyItr.Init(compositeSeed)
 
 	return agent, nil
 }
@@ -126,7 +126,9 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 	}
 
 	// fill in the public key deriving leaf
-	merkleSig.LeafPk = &sk.PublicKey
+	//merkleSig.LeafPk = &sk.PublicKey
+	merkleSig.LeafPk = (&sk.PublicKey).Clone()
+
 	// copy the auth path
 	merkleSig.Auth = make([][]byte, len(agent.auth))
 	for i := range agent.auth {

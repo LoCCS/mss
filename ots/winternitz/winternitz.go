@@ -24,6 +24,25 @@ type WinternitzSig struct {
 	sigma [][]byte
 }
 
+// Clone returns a copy of this public key
+func (pk *PublicKey) Clone() *PublicKey {
+	pkC := new(PublicKey)
+
+	if nil != pk.WtnOpts {
+		pkC.WtnOpts = pk.WtnOpts.Clone()
+	}
+
+	if nil != pk.Y {
+		pkC.Y = make([][]byte, len(pk.Y))
+		for i := range pk.Y {
+			pkC.Y[i] = make([]byte, len(pk.Y[i]))
+			copy(pkC.Y[i], pk.Y[i])
+		}
+	}
+
+	return pkC
+}
+
 // GenerateKey generates a one-time key pair
 //	according to specification (nonce, key-pair-index) in opts and
 //	by getting randomness from rng
@@ -88,7 +107,7 @@ func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	// 2^w-1
 	wmo := uint32((1 << w) - 1)
 
-	opts := pk.Clone()
+	opts := pk.WtnOpts.Clone()
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
 		// f^{w-1-b_i}(sigma_i)
