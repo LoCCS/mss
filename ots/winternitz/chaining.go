@@ -3,7 +3,7 @@ package winternitz
 // evalChain computes an iteration of fSum() on an n-byte input
 //	using outputs of prf()
 func evalChain(x []byte, offset, numIter uint32, wtnOpts *WtnOpts) []byte {
-	if (offset + numIter) >= w {
+	if (offset + numIter) >= (1 << w) {
 		return nil
 	}
 

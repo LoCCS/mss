@@ -38,7 +38,7 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	}
 
 	// evaluate the corresponding public key
-	numIter := uint32(w - 1)
+	numIter := uint32((1 << w) - 1)
 	for i := uint32(0); i < wtnLen; i++ {
 		// set the index of chain
 		opts.addr.setChainAddress(i)
@@ -83,7 +83,7 @@ func Verify(opts *WtnOpts, pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bo
 	}
 
 	// w-1
-	wBaseMax := uint32(w - 1)
+	wBaseMax := uint32((1 << w) - 1)
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
 		// f^{w-1-b_i}(sigma_i)

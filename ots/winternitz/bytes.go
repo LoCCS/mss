@@ -39,15 +39,17 @@ func hashToBlocks(hash []byte) []byte {
 
 	// compute checksum
 	var checksum uint64
+	// w-1
+	wmax := uint64((1 << w) - 1)
 	for _, b := range blocks {
-		checksum += w - 1 - uint64(b)
+		checksum += wmax - uint64(b)
 	}
 
 	// ?? convert checksum to base-w
 	// left shift checksum
-	checksum <<= (8 - (wtnLen2 * uint32(math.Ilogb(w)) % 8))
+	checksum <<= (8 - (wtnLen2*w)%8)
 	// big-endian-order byte string of checksum
-	checksumLen := int(math.Ceil(float64(wtnLen2) * float64(math.Ilogb(float64(w))) / 8))
+	checksumLen := int(math.Ceil(float64(wtnLen2*w) / 8))
 	checksumBytes := make([]byte, checksumLen)
 	ToBytes(checksumBytes, checksum)
 	ToBaseW(blocks[wtnLen1:], checksumBytes, w)

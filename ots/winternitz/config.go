@@ -18,20 +18,22 @@ const (
 var hashSize int
 
 const (
-	w = 16 // the Winternitz parameter, it is a member of the set {4, 16}
+	w = 4 // the width in bits of the Winternitz parameter, it should be in {2, 4}
 )
 
 // parameters derived from w
-// wtnLen is the number of n-byte string elements in a WOTS+ private key, public key, and signature.
+//	wtnLen is the number of n-byte string elements
+//	in a WOTS+ private key, public key, and signature.
 var wtnLen1, wtnLen2, wtnLen uint32
 
 func init() {
 	hashSize = HashFunc().Size()
 
-	wBits := float64(math.Ilogb(float64(w)))
-	wtnLen1 = uint32(math.Ceil(float64(hashSize) * 8 / wBits))
-	wtnLen2 = uint32(math.Floor(math.Log2(float64(wtnLen1)*(w-1))/wBits)) + 1
+	wtnLen1 = uint32(SecurityLevel * 8 / w)
+	wtnLen2 = uint32(math.Floor(math.Log2(float64(wtnLen1*((1<<w)-1)))/w)) + 1
+
 	wtnLen = wtnLen1 + wtnLen2
+	//fmt.Println("****", wtnLen1, wtnLen2, wtnLen)
 }
 
 // returns the hash function to use
