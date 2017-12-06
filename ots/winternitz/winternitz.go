@@ -8,6 +8,7 @@ import (
 
 // PublicKey as container for public key
 type PublicKey struct {
+	*WtnOpts
 	Y [][]byte
 }
 
@@ -36,6 +37,7 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 		sk.x[i] = make([]byte, opts.SecurityLevel())
 		rng.Read(sk.x[i])
 	}
+	sk.WtnOpts = opts.Clone()
 
 	// evaluate the corresponding public key
 	numIter := uint32((1 << w) - 1)
@@ -53,7 +55,8 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 //	the given private key
 //	the opts should have the same seed and key-pair index and
 //	as that of generating key pairs
-func Sign(opts *WtnOpts, sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
+//func Sign(opts *WtnOpts, sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
+func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	blocks := hashToBlocks(hash)
 	if len(sk.x) != len(blocks) {
 		return nil, errors.New("mismatched secret key and b_i")
@@ -62,6 +65,7 @@ func Sign(opts *WtnOpts, sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	wtnSig := new(WinternitzSig)
 	wtnSig.sigma = make([][]byte, len(sk.x))
 
+	opts := sk.WtnOpts.Clone()
 	for i := range sk.x {
 		// set index of chain
 		opts.addr.setChainAddress(uint32(i))
@@ -76,7 +80,8 @@ func Sign(opts *WtnOpts, sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 //	against the claimed public key and
 //	the opts should have the same seed and key-pair index
 //	as that of generating key pairs
-func Verify(opts *WtnOpts, pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
+//func Verify(opts *WtnOpts, pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
+func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	blocks := hashToBlocks(hash)
 	if (len(pk.Y) != len(blocks)) || (len(pk.Y) != len(wtnSig.sigma)) {
 		return false
@@ -84,6 +89,8 @@ func Verify(opts *WtnOpts, pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bo
 
 	// w-1
 	wBaseMax := uint32((1 << w) - 1)
+
+	opts := pk.Clone()
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
 		// f^{w-1-b_i}(sigma_i)

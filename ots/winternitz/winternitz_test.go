@@ -17,12 +17,12 @@ func TestWinternitzSig(t *testing.T) {
 	// generate keys
 	sk, _ := GenerateKey(DummyWtnOpts, mssrand.Reader)
 
-	wtnSig, err := Sign(DummyWtnOpts, sk, hash)
+	wtnSig, err := Sign(sk, hash)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	if !Verify(DummyWtnOpts, &sk.PublicKey, hash, wtnSig) {
+	if !Verify(&sk.PublicKey, hash, wtnSig) {
 		t.Fatal("verification failed")
 	}
 }
@@ -38,7 +38,7 @@ func TestWinternitzSigBadPk(t *testing.T) {
 	// generate keys
 	sk, _ := GenerateKey(DummyWtnOpts, mssrand.Reader)
 
-	wtnSig, err := Sign(DummyWtnOpts, sk, hash)
+	wtnSig, err := Sign(sk, hash)
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestWinternitzSigBadPk(t *testing.T) {
 	i, j := mathrand.Int()%len(pk.Y), mathrand.Int()%len(pk.Y[0])
 	pk.Y[i][j] ^= 0xff
 
-	if Verify(DummyWtnOpts, pk, hash, wtnSig) {
+	if Verify(pk, hash, wtnSig) {
 		t.Fatal("verification failed")
 	}
 }
