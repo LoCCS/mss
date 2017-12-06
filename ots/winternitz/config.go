@@ -7,24 +7,31 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+// security parameter
 const (
-	w = 16 // the Winternitz parameter, it is a member of the set {4, 16}
+	SecurityLevel256 = 32 // 256 bits
+	SecurityLevel512 = 64 // 512 bits
+	SecurityLevel    = SecurityLevel256
 )
 
 // length in bytes of digest produced by the employed hash function
 var hashSize int
 
+const (
+	w = 16 // the Winternitz parameter, it is a member of the set {4, 16}
+)
+
 // parameters derived from w
-// t is the number of n-byte string elements in a WOTS+ private key, public key, and signature.
-var len1, len2, t uint32
+// wtnLen is the number of n-byte string elements in a WOTS+ private key, public key, and signature.
+var wtnLen1, wtnLen2, wtnLen uint32
 
 func init() {
 	hashSize = HashFunc().Size()
 
 	wBits := float64(math.Ilogb(float64(w)))
-	len1 = uint32(math.Ceil(float64(hashSize) * 8 / wBits))
-	len2 = uint32(math.Floor(math.Log2(float64(len1)*(w-1))/wBits)) + 1
-	t = len1 + len2
+	wtnLen1 = uint32(math.Ceil(float64(hashSize) * 8 / wBits))
+	wtnLen2 = uint32(math.Floor(math.Log2(float64(wtnLen1)*(w-1))/wBits)) + 1
+	wtnLen = wtnLen1 + wtnLen2
 }
 
 // returns the hash function to use

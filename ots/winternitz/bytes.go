@@ -21,44 +21,36 @@ func ToBaseW(out []byte, X []byte, base byte) {
 	}
 }
 
-// ToBytes estimates the y-byte slice containing the binary
-//	representation of X in big-endian byte-order
-func ToBytes(X uint64) []byte {
-	out := make([]byte, 8)
-
-	// bits to shift
-	var offset uint32
-	//fmt.Println("len(out)-1:", len(out)-1)
+// ToBytes estimates the len(out)-byte slice containing the binary
+//	representation of x in big-endian byte-order
+func ToBytes(out []byte, x uint64) {
 	for i := len(out) - 1; i >= 0; i-- {
-		out[i] = byte((X >> offset) & 0xff)
-		offset += 8
+		out[i] = byte(x & 0xff)
+		x >>= 8
 	}
-
-	return out
 }
 
-// hashToBlocks encodes a given hash value as t base-w blocks
+// hashToBlocks encodes a given hash value as wtnLen base-w blocks
 func hashToBlocks(hash []byte) []byte {
-	blocks := make([]byte, t)
-
-	//fmt.Println("t =", t)
-	//fmt.Println("len1 =", len1)
-	//fmt.Println("len2 =", len2)
+	blocks := make([]byte, wtnLen)
 
 	// convert hash to base-w blocks
-	ToBaseW(blocks[:len1], hash, w)
+	ToBaseW(blocks[:wtnLen1], hash, w)
 
 	// compute checksum
 	var checksum uint64
 	for _, b := range blocks {
-		//fmt.Println(uint64(b))
 		checksum += w - 1 - uint64(b)
 	}
 
 	// ?? convert checksum to base-w
-	//checksum <<= (8 - (len2 * uint32(math.Ilogb(w)) % 8))
-	checksumBytes := ToBytes(checksum)
-	ToBaseW(blocks[len1:], checksumBytes, w)
+	// left shift checksum
+	checksum <<= (8 - (wtnLen2 * uint32(math.Ilogb(w)) % 8))
+	// big-endian-order byte string of checksum
+	checksumLen := int(math.Ceil(float64(wtnLen2) * float64(math.Ilogb(float64(w))) / 8))
+	checksumBytes := make([]byte, checksumLen)
+	ToBytes(checksumBytes, checksum)
+	ToBaseW(blocks[wtnLen1:], checksumBytes, w)
 
 	return blocks
 }

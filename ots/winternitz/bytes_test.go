@@ -2,7 +2,6 @@ package winternitz
 
 import (
 	"bytes"
-	"fmt"
 	"math"
 	"testing"
 )
@@ -30,27 +29,30 @@ func TestToBaseW(t *testing.T) {
 
 // TestToBytes checks big-endian serialization by ToBytes()
 func TestToBytes(t *testing.T) {
-	X := uint64(0x123456789abcdef0)
+	x := uint64(0x123456789abcdef0)
 
-	XBytesBE := ToBytes(X)
-	XWants := []byte{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0}
-	if !bytes.Equal(XBytesBE, XWants) {
-		t.Fatal("invalid output: wants %x, got %x", XWants, XBytesBE)
+	xBytesBE := make([]byte, 8)
+	ToBytes(xBytesBE, x)
+	xWants := []byte{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0}
+	if !bytes.Equal(xBytesBE, xWants) {
+		t.Fatal("invalid output: wants %x, got %x", xWants, xBytesBE)
 	}
 
-	Y := uint64(0x123456789abcde)
+	y := uint64(0x1234567)
 
-	YBytesBE := ToBytes(Y)
-	YWants := []byte{0x00, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde}
-	if !bytes.Equal(YBytesBE, YWants) {
-		t.Fatal("invalid output: wants %x, got %x", YWants, YBytesBE)
+	yBytesBE := make([]byte, 4)
+	ToBytes(yBytesBE, y)
+	yWants := []byte{0x01, 0x23, 0x45, 0x67}
+	if !bytes.Equal(yBytesBE, yWants) {
+		t.Fatal("invalid output: wants %x, got %x", yWants, yBytesBE)
 	}
 }
 
+/*
 // TestHashToBlocks checks the encoding of hash byte slice
 //	to blocks
 func TestHashToBlocks(t *testing.T) {
-	msg := "TestHashToBlocksV21"
+	msg := "TestHashToBlocks"
 	sha := HashFunc()
 	sha.Write([]byte(msg))
 	hash := sha.Sum(nil)
@@ -58,3 +60,4 @@ func TestHashToBlocks(t *testing.T) {
 	blocks := hashToBlocks(hash)
 	fmt.Printf("%x\n", blocks)
 }
+*/
