@@ -99,17 +99,14 @@ func (prkg *KeyIterator) Offset() uint32 {
 	return prkg.offset
 }
 
-// Seed returns the internal updated seed for usage
-//	such as saving state of the prkgator
-// !!!TBR: to be removed
-func (prkg *KeyIterator) Seed() []byte {
-	return prkg.rng.ExportSeed()
-}
-
 // Serialize encodes the key iterator as
 //	+---------------------------------------------+
 //	|	len(seed)||seed||offset||len(nonce)||nonce	|
 //	+---------------------------------------------+
+//	the byte slice export from here makes up
+//	everything needed to recovered the state the prkg
+//	So unless it's your first-time use, you should
+//	store this byte slice so as to snapshot the prkg
 func (prkg *KeyIterator) Serialize() []byte {
 	buf := new(bytes.Buffer)
 
