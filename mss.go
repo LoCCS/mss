@@ -41,7 +41,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 
 	for i := 0; i < (1 << H); i++ {
 		// TODO: adapt the *WtnOpts
-		sk, _ := wots.GenerateKey(rng)
+		sk, _ := wots.GenerateKey(wots.DummyWtnOpts, rng)
 		rng.NextState()
 		agent.nodeHouse[i] = HashPk(&sk.PublicKey)
 	}
@@ -122,7 +122,7 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 	merkleSig.Leaf = agent.leaf
 
 	// TODO: adapt for *WtnOpts
-	sk, err := wots.GenerateKey(agent.rng)
+	sk, err := wots.GenerateKey(wots.DummyWtnOpts, agent.rng)
 	agent.rng.NextState()
 	agent.leaf++
 	merkleSig.WtnSig, err = wots.Sign(sk, hash)
