@@ -53,10 +53,9 @@ func hashToBlocks(hash []byte) []byte {
 
 	// compute checksum
 	var checksum uint64
-	// 2^w-1
-	wmax := uint64((1 << w) - 1)
 	for _, b := range blocks {
-		checksum += wmax - uint64(b)
+		// + (2^w-1)+b[i]
+		checksum += wtnMask - uint64(b)
 	}
 
 	// ?? convert checksum to base-w

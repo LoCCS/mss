@@ -59,12 +59,12 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	sk.WtnOpts = opts.Clone()
 
 	// evaluate the corresponding public key
-	numIter := uint32((1 << w) - 1)
+	//numIter := uint32((1 << w) - 1)
 	for i := uint32(0); i < wtnLen; i++ {
 		// set the index of chain
 		opts.addr.setChainAddress(i)
 		// derive the corresponding y[i]
-		sk.Y[i] = evalChain(sk.x[i], 0, numIter, opts)
+		sk.Y[i] = evalChain(sk.x[i], 0, wtnMask, opts)
 	}
 
 	return sk, nil
@@ -104,14 +104,11 @@ func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 		return false
 	}
 
-	// 2^w-1
-	wmo := uint32((1 << w) - 1)
-
 	opts := pk.WtnOpts.Clone()
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
-		// f^{w-1-b_i}(sigma_i)
-		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]), wmo-uint32(blocks[i]), opts)
+		// f^{2^w-1-b_i}(sigma_i)
+		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]), wtnMask-uint32(blocks[i]), opts)
 
 		if !bytes.Equal(pk.Y[i], y) {
 			return false
