@@ -2,9 +2,10 @@ package winternitz
 
 import (
 	"bytes"
-	"math"
 	"math/rand"
 	"testing"
+
+	"golang.org/x/crypto/sha3"
 )
 
 func TestGetUint64(t *testing.T) {
@@ -17,24 +18,21 @@ func TestGetUint64(t *testing.T) {
 	}
 }
 
-// TestToBaseW checks the correctness of ToBaseW()
-func TestToBaseW(t *testing.T) {
-	const w = 16
+func TestToBase(t *testing.T) {
+	const baseWidth = 4
 	X := []byte{0x12, 0x34}
 
-	outLen := 8 * len(X) / math.Ilogb(w)
+	outLen := 8 * len(X) / w
 	out := make([]byte, outLen)
 
-	ToBaseW(out, X, w)
+	ToBase(out, X, w)
 
 	want := []byte{1, 2, 3, 4}
 	if len(want) != len(out) {
 		t.Fatal("error output length")
 	}
-	for i := range out {
-		if want[i] != out[i] {
-			t.Fatalf("error output byte: wants %v, got %v", want[i], out[i])
-		}
+	if !bytes.Equal(want, out) {
+		t.Fatalf("wants %x, got %x", want, out)
 	}
 }
 
@@ -73,16 +71,16 @@ func TestPutBytesAndGetUint64(t *testing.T) {
 	}
 }
 
-/*
 // TestHashToBlocks checks the encoding of hash byte slice
 //	to blocks
 func TestHashToBlocks(t *testing.T) {
-	msg := "TestHashToBlocks"
-	sha := HashFunc()
-	sha.Write([]byte(msg))
-	hash := sha.Sum(nil)
+	hash := sha3.Sum256([]byte("TestHashToBlocks"))
+	blocks := hashToBlocks(hash[:])
 
-	blocks := hashToBlocks(hash)
-	fmt.Printf("%x\n", blocks)
+	wm := byte((1 << w) - 1)
+	for _, b := range blocks {
+		if b > wm {
+			t.Fatalf("%v>%v", b, wm)
+		}
+	}
 }
-*/
