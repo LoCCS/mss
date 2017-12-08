@@ -1,6 +1,9 @@
 package winternitz
 
-import "fmt"
+import (
+	"encoding/binary"
+	"fmt"
+)
 
 // address encodes an OTS hash address, which is formatted as
 /*
@@ -47,7 +50,7 @@ func newAddress() address {
 func (addr address) onKey() {
 	bs := []byte(addr)
 
-	ToBytes(bs[addr_key_and_mask_offset:], 0)
+	binary.BigEndian.PutUint32(bs[addr_key_and_mask_offset:], 0)
 }
 
 // onMask masks the last 4 bytes as all 1s
@@ -55,14 +58,14 @@ func (addr address) onKey() {
 func (addr address) onMask() {
 	bs := []byte(addr)
 
-	ToBytes(bs[addr_key_and_mask_offset:], 0xffffffff)
+	binary.BigEndian.PutUint32(bs[addr_key_and_mask_offset:], 0xffffffff)
 }
 
 // setChainAddress sets the index i of target component sk[i]
 func (addr address) setChainAddress(chainAddress uint32) {
 	bs := []byte(addr)
 
-	ToBytes(bs[addr_chain_offset:addr_hash_offset], uint64(chainAddress))
+	binary.BigEndian.PutUint32(bs[addr_chain_offset:addr_hash_offset], chainAddress)
 }
 
 // setHashAddress set the offset of the address
@@ -70,14 +73,14 @@ func (addr address) setChainAddress(chainAddress uint32) {
 func (addr address) setHashAddress(hashAddress uint32) {
 	bs := []byte(addr)
 
-	ToBytes(bs[addr_hash_offset:addr_key_and_mask_offset], uint64(hashAddress))
+	binary.BigEndian.PutUint32(bs[addr_hash_offset:addr_key_and_mask_offset], hashAddress)
 }
 
 // setKeyIdx encodes the index of the OTS key pair within the tree
 func (addr address) setKeyIdx(i uint32) {
 	bs := []byte(addr)
 
-	ToBytes(bs[addr_ots_offset:addr_chain_offset], uint64(i))
+	binary.BigEndian.PutUint32(bs[addr_ots_offset:addr_chain_offset], i)
 }
 
 // Len returns the length in bytes of the address

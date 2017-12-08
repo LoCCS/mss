@@ -59,7 +59,6 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	sk.WtnOpts = opts.Clone()
 
 	// evaluate the corresponding public key
-	//numIter := uint32((1 << w) - 1)
 	for i := uint32(0); i < wtnLen; i++ {
 		// set the index of chain
 		opts.addr.setChainAddress(i)

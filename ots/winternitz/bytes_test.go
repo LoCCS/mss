@@ -2,12 +2,12 @@ package winternitz
 
 import (
 	"bytes"
-	"math/rand"
 	"testing"
 
 	"golang.org/x/crypto/sha3"
 )
 
+/*
 func TestGetUint64(t *testing.T) {
 	buf := []byte{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12}
 	want := uint64(0x123456789abcdef0)
@@ -17,6 +17,7 @@ func TestGetUint64(t *testing.T) {
 		t.Fatalf("want %x, got %x", want, x)
 	}
 }
+*/
 
 func TestToBase(t *testing.T) {
 	const baseWidth = 4
@@ -36,6 +37,7 @@ func TestToBase(t *testing.T) {
 	}
 }
 
+/*
 // TestToBytes checks big-endian serialization by ToBytes()
 func TestToBytes(t *testing.T) {
 	x := uint64(0x123456789abcdef0)
@@ -70,6 +72,7 @@ func TestPutBytesAndGetUint64(t *testing.T) {
 		t.Fatalf("want %x, got %x", x, z)
 	}
 }
+*/
 
 // TestHashToBlocks checks the encoding of hash byte slice
 //	to blocks
