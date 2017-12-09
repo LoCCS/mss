@@ -2,25 +2,25 @@ package winternitz
 
 // evalChain computes an iteration of fSum() on an n-byte input
 //	using outputs of prf()
-func evalChain(x []byte, offset, numIter uint32, wtnOpts *WtnOpts) []byte {
+func evalChain(x []byte, offset, numIter uint32, nonce []byte, addr address) []byte {
 	if (offset + numIter) > wtnMask {
 		return nil
 	}
 
-	out := make([]byte, wtnOpts.SecurityLevel())
+	out := make([]byte, len(nonce))
 	copy(out, x)
 
-	key := make([]byte, wtnOpts.SecurityLevel())
+	key := make([]byte, len(nonce))
 	bitmask := make([]byte, SecurityLevel)
 	for i := offset; i < (offset + numIter); i++ {
-		wtnOpts.addr.setHashAddress(i)
+		addr.setHashAddress(i)
 
 		// derive key
-		wtnOpts.addr.onKey()
-		prf(key, wtnOpts.nonce, wtnOpts.addr)
+		addr.onKey()
+		prf(key, nonce, addr)
 		// derive bitmask
-		wtnOpts.addr.onMask()
-		prf(bitmask, wtnOpts.nonce, wtnOpts.addr)
+		addr.onMask()
+		prf(bitmask, nonce, addr)
 
 		// out ^ bitmask
 		for j := range out {

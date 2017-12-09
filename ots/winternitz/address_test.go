@@ -53,3 +53,18 @@ func TestAddress(t *testing.T) {
 		t.Fatalf("want %x, got\n", want, []byte(addr))
 	}
 }
+
+func TestAddressCopy(t *testing.T) {
+	addr := newAddress()
+	addr.setKeyIdx(0x1234)
+	addr.setChainAddress(0x5678)
+	addr.setHashAddress(0x9abc)
+	addr.onMask()
+
+	addrC := make(address, 32)
+	copy(addrC, addr)
+
+	if !bytes.Equal(addr, addrC) {
+		t.Fatalf("want %x, got %x", addr, addrC)
+	}
+}

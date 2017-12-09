@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"runtime"
+	"sync"
 )
 
 // PublicKey as container for public key
@@ -59,12 +61,38 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	sk.WtnOpts = opts.Clone()
 
 	// evaluate the corresponding public key
-	for i := uint32(0); i < wtnLen; i++ {
-		// set the index of chain
-		opts.addr.setChainAddress(i)
-		// derive the corresponding y[i]
-		sk.Y[i] = evalChain(sk.x[i], 0, wtnMask, opts)
+	var wg sync.WaitGroup
+	numCPU := uint32(runtime.NumCPU())
+	workloadSize := (wtnLen + numCPU - 1) / numCPU
+	for i := uint32(0); i < numCPU; i++ {
+		wg.Add(1)
+
+		// worker
+		go func(workerIdx uint32) {
+			defer wg.Done()
+
+			// range of chains run by current worker
+			from := workerIdx * workloadSize
+			to := from + workloadSize
+			if to > wtnLen {
+				to = wtnLen
+			}
+
+			// make an address copy
+			addr := make(address, sk.WtnOpts.addr.Len())
+			copy(addr, sk.WtnOpts.addr)
+
+			for j := from; j < to; j++ {
+				// set the index of chain
+				addr.setChainAddress(j)
+				// derive the corresponding y[i]
+				sk.Y[j] = evalChain(sk.x[j], 0, wtnMask, sk.WtnOpts.nonce, addr)
+			}
+		}(i)
 	}
+
+	// wait until all Y[j] has been computed
+	wg.Wait()
 
 	return sk, nil
 }
@@ -87,7 +115,8 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 		// set index of chain
 		opts.addr.setChainAddress(uint32(i))
 		// sigma_i=f^b_i(x_i)
-		wtnSig.sigma[i] = evalChain(sk.x[i], 0, uint32(blocks[i]), opts)
+		wtnSig.sigma[i] = evalChain(sk.x[i], 0, uint32(blocks[i]),
+			opts.nonce, opts.addr)
 	}
 
 	return wtnSig, nil
@@ -107,7 +136,8 @@ func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	for i := range wtnSig.sigma {
 		opts.addr.setChainAddress(uint32(i))
 		// f^{2^w-1-b_i}(sigma_i)
-		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]), wtnMask-uint32(blocks[i]), opts)
+		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]),
+			wtnMask-uint32(blocks[i]), opts.nonce, opts.addr)
 
 		if !bytes.Equal(pk.Y[i], y) {
 			return false
