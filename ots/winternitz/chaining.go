@@ -11,7 +11,7 @@ func evalChain(x []byte, offset, numIter uint32, nonce []byte, addr address) []b
 	copy(out, x)
 
 	key := make([]byte, len(nonce))
-	bitmask := make([]byte, SecurityLevel)
+	bitmask := make([]byte, len(nonce))
 	for i := offset; i < (offset + numIter); i++ {
 		addr.setHashAddress(i)
 

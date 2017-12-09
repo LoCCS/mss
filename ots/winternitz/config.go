@@ -22,11 +22,7 @@ const (
 var wtnLen1, wtnLen2, wtnLen uint32
 
 func init() {
-	// wtnLen1 = ceil(8n/w)
 	wtnLen1 = uint32(SecurityLevel * 8 / w)
-
-	// wtnLen2 = floor(log2(wtnLen1*(2^w-1))/w)+1
-	wtnLen2 = uint32(math.Floor(math.Log2(float64(wtnLen1*wtnMask))/w)) + 1
-
+	wtnLen2 = uint32(math.Log2(float64(wtnLen1*wtnMask))/w) + 1
 	wtnLen = wtnLen1 + wtnLen2
 }
