@@ -1,0 +1,25 @@
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.pin-top {
+    position: relative;
+}
+
+.pin-bottom {
+    position: relative;
+}
+
+.pinned {
+    position: fixed !important;
+}
+
+.page-footer {
+    padding-top: 0px
+}
