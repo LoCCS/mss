@@ -32,4 +32,5 @@ $ go get -u github.com/LoCCS/mss
 
 <a name="dev-res"></a>
 ## Development Resources  
-+ GitHub: [https://github.com/LoCCS/mss](https://github.com/LoCCS/mss)  
++ [Github](https://github.com/LoCCS/mss)  
++ [Docs](https://loccs.github.io/mss/)
