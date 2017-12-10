@@ -110,14 +110,38 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	wtnSig := new(WinternitzSig)
 	wtnSig.sigma = make([][]byte, len(sk.x))
 
-	opts := sk.WtnOpts.Clone()
-	for i := range sk.x {
-		// set index of chain
-		opts.addr.setChainAddress(uint32(i))
-		// sigma_i=f^b_i(x_i)
-		wtnSig.sigma[i] = evalChain(sk.x[i], 0, uint32(blocks[i]),
-			opts.nonce, opts.addr)
+	var wg sync.WaitGroup
+	numCPU := uint32(runtime.NumCPU())
+	xLen := uint32(len(sk.x))
+	jobSize := (xLen + numCPU - 1) / numCPU
+	for i := uint32(0); i < numCPU; i++ {
+		wg.Add(1)
+		// worker
+		go func(workerIdx uint32) {
+			defer wg.Done()
+			// range of blocks evaluated by current worker
+			from := workerIdx * jobSize
+			to := from + jobSize
+			if to > xLen {
+				to = xLen
+			}
+
+			// make an address copy
+			addr := make(address, sk.WtnOpts.addr.Len())
+			copy(addr, sk.WtnOpts.addr)
+
+			for j := from; j < to; j++ {
+				// set index of chain
+				addr.setChainAddress(j)
+				// sigma_j=f^b_j(x_j)
+				wtnSig.sigma[j] = evalChain(sk.x[j], 0, uint32(blocks[j]),
+					sk.WtnOpts.nonce, addr)
+			}
+		}(i)
 	}
+
+	// synchronise all verification of Y[j]
+	wg.Wait()
 
 	return wtnSig, nil
 }
@@ -132,17 +156,44 @@ func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 		return false
 	}
 
-	opts := pk.WtnOpts.Clone()
-	for i := range wtnSig.sigma {
-		opts.addr.setChainAddress(uint32(i))
-		// f^{2^w-1-b_i}(sigma_i)
-		y := evalChain(wtnSig.sigma[i], uint32(blocks[i]),
-			wtnMask-uint32(blocks[i]), opts.nonce, opts.addr)
+	// flag indicating signature is valid
+	ok := true
 
-		if !bytes.Equal(pk.Y[i], y) {
-			return false
-		}
+	// verify the signature in parallel
+	var wg sync.WaitGroup
+	numCPU := uint32(runtime.NumCPU())
+	yLen := uint32(len(pk.Y))
+	jobSize := (yLen + numCPU - 1) / numCPU
+	for i := uint32(0); i < numCPU; i++ {
+		wg.Add(1)
+		// worker
+		go func(workerIdx uint32) {
+			defer wg.Done()
+			// range of blocks evaluated by current worker
+			from := workerIdx * jobSize
+			to := from + jobSize
+			if to > yLen {
+				to = yLen
+			}
+
+			// make an address copy
+			addr := make(address, pk.WtnOpts.addr.Len())
+			copy(addr, pk.WtnOpts.addr)
+
+			for j := from; j < to; j++ {
+				// set index of chain
+				addr.setChainAddress(j)
+				// f^{2^w-1-b_j}(sigma_j)
+				y := evalChain(wtnSig.sigma[j], uint32(blocks[j]),
+					wtnMask-uint32(blocks[j]), pk.WtnOpts.nonce, addr)
+
+				ok = ok && bytes.Equal(pk.Y[j], y)
+			}
+		}(i)
 	}
 
-	return true
+	// synchronise all verification of Y[j]
+	wg.Wait()
+
+	return ok
 }
