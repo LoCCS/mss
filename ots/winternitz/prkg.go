@@ -26,12 +26,12 @@ func NewKeyIterator(compactSeed []byte) *KeyIterator {
 
 	prkg.rng = rand.New(compactSeed)
 	prkg.offset = 0
-	prkg.WtnOpts = NewWtnOpts(SecurityLevel256)
+	prkg.WtnOpts = NewWtnOpts(SecurityLevel)
 
 	return prkg
 }
 
-// Init initialises the prkgator with the compsiste seed
+// Init initialises the prkgator with the composite seed
 //	exported by Serialize()
 func (prkg *KeyIterator) Init(compositeSeed []byte) bool {
 	buf := bytes.NewBuffer(compositeSeed)

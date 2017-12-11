@@ -2,6 +2,7 @@ package winternitz
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"io"
 	"runtime"
@@ -54,9 +55,13 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	sk.Y = make([][]byte, wtnLen)
 
 	// sample the private key
+	skIdx := make([]byte, 32)
+	seed := make([]byte, opts.SecurityLevel())
+	rng.Read(seed)
 	for i := range sk.x {
 		sk.x[i] = make([]byte, opts.SecurityLevel())
-		rng.Read(sk.x[i])
+		binary.BigEndian.PutUint32(skIdx, uint32(i))
+		prf(sk.x[i], seed, skIdx)
 	}
 	sk.WtnOpts = opts.Clone()
 
