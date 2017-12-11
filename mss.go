@@ -12,8 +12,7 @@ import (
 // MerkleAgent implements a agent working
 //	according to the Merkle signature scheme
 type MerkleAgent struct {
-	H uint32
-	//NumLeafUsed    uint32
+	H              uint32
 	auth           [][]byte
 	root           []byte
 	nodeHouse      [][]byte
@@ -39,7 +38,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 
 	for i := 0; i < (1 << H); i++ {
 		sk, err := agent.keyItr.Next()
-		if err != nil{
+		if err != nil {
 			return nil, err
 		}
 		agent.nodeHouse[i] = HashPk(&sk.PublicKey)
@@ -71,7 +70,7 @@ func (agent *MerkleAgent) refreshAuth() {
 	for h := uint32(0); h < agent.H; h++ {
 		pow2Toh := uint32(1 << h)
 		// nextLeaf % 2^h == 0
-		if 0 == nextLeaf & (pow2Toh - 1) {
+		if 0 == nextLeaf&(pow2Toh-1) {
 			copy(agent.auth[h], agent.treeHashStacks[h].Top().nu)
 			startingLeaf := (nextLeaf + pow2Toh) ^ pow2Toh
 			agent.treeHashStacks[h].Init(startingLeaf, h)
@@ -119,7 +118,7 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 
 	// TODO: adapt for *WtnOpts
 	sk, err := agent.keyItr.Next()
-	if err != nil{
+	if err != nil {
 		return nil, nil, err
 	}
 	merkleSig.WtnSig, err = wots.Sign(sk, hash)
@@ -159,7 +158,7 @@ func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 	parentHash := HashPk(merkleSig.LeafPk)
 	for h := 0; h < H; h++ {
 		hashFunc.Reset()
-		if 1 == idx % 2 { // idx is odd, i.e., a right node
+		if 1 == idx%2 { // idx is odd, i.e., a right node
 			hashFunc.Write(merkleSig.Auth[h])
 			hashFunc.Write(parentHash)
 		} else {
