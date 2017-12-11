@@ -90,7 +90,9 @@ func (prkg *KeyIterator) Next() (*PrivateKey, error) {
 	keyPair, err := GenerateKey(prkg.WtnOpts, prkg.rng)
 
 	prkg.offset++
-	prkg.rng.NextState()
+	// update the internal state of rng
+	prkg.rng.Read(nil)
+
 	return keyPair, err
 }
 

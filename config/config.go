@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	Size224 = 28
 	Size256 = 32
+	Size512 = 64
 	Size    = Size256
 )
 

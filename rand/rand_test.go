@@ -16,7 +16,7 @@ func TestRandSeed(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if len(seed) != sha.Size() {
+		if len(seed) != config.Size {
 			t.Errorf("invalid lenght of seed, wants %v, got %v", config.Size, len(seed))
 		}
 	}
@@ -31,13 +31,19 @@ func TestRand(t *testing.T) {
 	}
 
 	rng := New(seed)
-	p := make([]byte, config.Size)
-	//rng.Read(p)
-	rng.NextState()
+	// update seed
+	rng.Read(nil)
+	if bytes.Equal(seed, rng.ExportSeed()) {
+		t.Fatal("seed should have been updated")
+	}
+	//t.Logf("seed1: %x\n")
 
 	rng2 := New(rng.ExportSeed())
-	p2 := make([]byte, sha.Size())
-	for i := 0; i < 2; i++ {
+
+	p := make([]byte, config.Size)
+	p2 := make([]byte, config.Size)
+
+	for i := 0; i < 8; i++ {
 		rng.Read(p)
 		rng2.Read(p2)
 
