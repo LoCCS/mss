@@ -3,8 +3,10 @@ package mss
 import (
 	"fmt"
 	"math"
-
+	"github.com/LoCCS/mss/config"
 	"github.com/LoCCS/mss/container/stack"
+	"encoding/binary"
+
 )
 
 // Node is a node in the Merkle tree
@@ -108,4 +110,62 @@ func (th *TreeHashStack) Update(numOp uint32, nodeHouse [][]byte) {
 		th.leaf++
 		numOp--
 	}
+}
+
+// Serialize encodes the Treehashstack as
+//	+---------------------------------------------------------+
+//	|	stackLen||elementSize||element||element||...||element||
+//	+---------------------------------------------------------+
+// elements are put from bottom to top
+func (th *TreeHashStack) Serialize() []byte{
+	stackSize := uint32(th.nodeStack.Len())
+	elementSize := uint32(4 + config.Size)
+	ret := make([]byte, 20 + stackSize * elementSize)
+	binary.LittleEndian.PutUint32(ret[0:], stackSize)
+	binary.LittleEndian.PutUint32(ret[4:], elementSize)
+	binary.LittleEndian.PutUint32(ret[8:], th.leaf)
+	binary.LittleEndian.PutUint32(ret[12:], th.leafUpper)
+	binary.LittleEndian.PutUint32(ret[16:], th.height)
+
+
+	vs := th.nodeStack.ValueSlice()
+	offset := 20
+	for i := 0; i < th.nodeStack.Len(); i++{
+		binary.LittleEndian.PutUint32(ret[offset:], vs[i].(*Node).height)
+		offset += 4
+		copy(ret[offset:], vs[i].(*Node).nu)
+		offset += config.Size
+	}
+
+	return ret
+}
+
+//RebuildTreeHashStack restores the TreeHashStack from serialized bytes
+func RebuildTreeHashStack(stackBytes []byte) *TreeHashStack{
+	th := &TreeHashStack{}
+
+	th.leaf = binary.LittleEndian.Uint32(stackBytes[8:])
+	th.leafUpper = binary.LittleEndian.Uint32(stackBytes[12:])
+	th.height = binary.LittleEndian.Uint32(stackBytes[16:])
+
+	stackSize := binary.LittleEndian.Uint32(stackBytes[0:])
+	elementSize := binary.LittleEndian.Uint32(stackBytes[4:])
+	hashSize := int(elementSize) - 4
+
+	offset := 20
+	th.nodeStack = stack.New()
+	for i := 0 ; i < int(stackSize); i++{
+		height := binary.LittleEndian.Uint32(stackBytes[offset : offset + 4])
+		offset += 4
+		nu := stackBytes[offset : offset+hashSize]
+		offset += hashSize
+		node := &Node{
+			height: height,
+			nu: nu,
+		}
+		th.nodeStack.Push(node)
+	}
+
+
+	return th
 }

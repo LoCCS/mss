@@ -74,3 +74,14 @@ func (s *Stack) Len() int {
 func (s *Stack) Empty() bool {
 	return 0 == s.size
 }
+
+// ValueSlice returns all elements of stack in slice
+func (s *Stack) ValueSlice() []interface{}{
+	vs := make([]interface{}, s.size)
+	ele := s.top
+	for i := s.size - 1; i >= 0; i--{
+		vs[i] = ele.Value
+		ele = ele.next
+	}
+	return vs
+}

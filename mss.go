@@ -7,6 +7,7 @@ import (
 
 	"github.com/LoCCS/mss/config"
 	wots "github.com/LoCCS/mss/ots/winternitz"
+	"encoding/binary"
 )
 
 // MerkleAgent implements a agent working
@@ -176,4 +177,63 @@ func Verify(root []byte, hash []byte, merkleSig *MerkleSig) bool {
 // return the verification root
 func (agent *MerkleAgent) Root() []byte {
 	return agent.root
+}
+
+//Serialize encodes all the information about the merkle tree that can be stored as plaintext
+func (agent *MerkleAgent) Serialize() []byte{
+	size := config.Size
+	ret := make([]byte, 4 + 4 + size + int(agent.H) * size)
+	binary.LittleEndian.PutUint32(ret[0:4], agent.H)
+	binary.LittleEndian.PutUint32(ret[4:8], uint32(size))
+	copy(ret[8:8+size], agent.root[:])
+	offset := 8 + size
+	for i := 0; i < int(agent.H); i++{
+		copy(ret[offset:offset+size], agent.auth[i][:])
+		offset += size
+	}
+	for i := 0; i < int(agent.H); i++{
+		treeHashBytes := agent.treeHashStacks[i].Serialize()
+		ret = append(ret, treeHashBytes...)
+	}
+	for _, node := range agent.nodeHouse{
+		ret = append(ret, node...)
+	}
+	return ret
+}
+
+//SerializeSecret encodes all the secret data which shall be encrypted
+func (agent *MerkleAgent) SerializeSecret() []byte{
+	return agent.keyItr.Serialize()
+}
+
+//RebuildMerkleAgent restores the merkle agent from serialized bytes and secret bytes
+func RebuildMerkleAgent(plain []byte, secret []byte) *MerkleAgent{
+	agent := &MerkleAgent{}
+	seed := make([]byte, config.Size)
+	agent.keyItr = wots.NewKeyIterator(seed)
+	agent.keyItr.Init(secret)
+	agent.H = binary.LittleEndian.Uint32(plain[0:4])
+	hashSize := binary.LittleEndian.Uint32(plain[4:8])
+	root := plain[8:8 + hashSize]
+	agent.root = root
+	offset := 8 + hashSize
+	agent.auth = make([][]byte, agent.H)
+	for i := 0; i < int(agent.H); i++{
+		agent.auth[i] = plain[offset:offset+hashSize]
+		offset += hashSize
+	}
+	agent.treeHashStacks = make([]*TreeHashStack, agent.H)
+	for i := 0; i < int(agent.H); i++ {
+		stackSize := binary.LittleEndian.Uint32(plain[offset:offset+4])
+		elementSize := binary.LittleEndian.Uint32(plain[offset+4:offset+8])
+		stackBytes := plain[offset: offset+20+stackSize*elementSize]
+		agent.treeHashStacks[i] = RebuildTreeHashStack(stackBytes)
+		offset += 20+stackSize*elementSize
+	}
+	agent.nodeHouse = make([][]byte, 1 << agent.H)
+	for i := 0; i < (1<<agent.H); i++{
+		agent.nodeHouse[i] = plain[offset:offset+hashSize]
+		offset += hashSize
+	}
+	return agent
 }
