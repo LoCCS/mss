@@ -118,6 +118,11 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 	merkleSig.Leaf = agent.keyItr.Offset()
 
 	// TODO: adapt for *WtnOpts
+	offset := agent.keyItr.Offset()
+	if offset >= (1 << agent.H){
+		return nil, nil, errors.New("key pairs on the tree are totally used")
+	}
+
 	sk, err := agent.keyItr.Next()
 	if err != nil {
 		return nil, nil, err
@@ -140,8 +145,13 @@ func Sign(agent *MerkleAgent, hash []byte) (*wots.PrivateKey, *MerkleSig, error)
 
 	// update auth path
 	agent.Traverse()
+	offset = agent.keyItr.Offset()
+	err = nil
+	if offset == (1 << agent.H) - 1{
+		err = errors.New("Warning: this is the last signature")
+	}
 
-	return sk, merkleSig, nil
+	return sk, merkleSig, err
 }
 
 // Verify verifies a Merkle signature

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	H = 20 // the height of the merkle tree
+	H = 3 // the height of the merkle tree
 )
 
 func TestMSS(t *testing.T) {
@@ -30,7 +30,7 @@ func TestMSS(t *testing.T) {
 	var maxver time.Duration
 	success := 0
 	failure := 0
-	for i := 0; i < 1<<H; i++ {
+	for i := 0; i < 12; i++ {
 
 		if i%1837 == 0{
 			fmt.Printf("Success %v, failure %v\n", success, failure)
