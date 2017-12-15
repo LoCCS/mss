@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 	"time"
+	"strings"
 
 	"github.com/LoCCS/mss/rand"
 )
 
 const (
-	H = 3 // the height of the merkle tree
+	H = 8 // the height of the merkle tree
 )
 
 func TestMSS(t *testing.T) {
@@ -17,7 +18,6 @@ func TestMSS(t *testing.T) {
 	agentStart := time.Now()
 	merkleAgent, err := NewMerkleAgent(H, seed)
 	agentTime := time.Since(agentStart)
-	fmt.Println(agentTime)
 
 	if err != nil {
 		fmt.Println(err)
@@ -30,7 +30,7 @@ func TestMSS(t *testing.T) {
 	var maxver time.Duration
 	success := 0
 	failure := 0
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 1 << H + 2; i++ {
 
 		if i%1837 == 0{
 			fmt.Printf("Success %v, failure %v\n", success, failure)
@@ -45,6 +45,9 @@ func TestMSS(t *testing.T) {
 		signTime := time.Since(signStart)
 		if err != nil {
 			fmt.Println(err)
+			if !strings.Contains(err.Error(),"Warning"){
+				continue
+			}
 		}
 		signSum += signTime
 		if signTime > maxsig {

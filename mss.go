@@ -27,8 +27,7 @@ func NewMerkleAgent(H uint32, seed []byte) (*MerkleAgent, error) {
 	if H < 2 {
 		return nil, errors.New("H should be larger than 1")
 	}
-	seedbk := make([]byte, len(seed))
-	copy(seedbk, seed)
+
 	agent := new(MerkleAgent)
 	agent.H = H
 	agent.auth = make([][]byte, H)
