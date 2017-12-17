@@ -1,8 +1,6 @@
 package winternitz
 
-import (
-	mssbinary "github.com/LoCCS/mss/binary"
-)
+import "encoding/binary"
 
 // ToBase outputs an array `out` of integers between 0 and ((2<<baseWidth) - 1)
 //	len(out) is REQUIRED to be <=8*len(X)/baseWidth
@@ -36,9 +34,9 @@ func hashToBlocks(hash []byte) []byte {
 	// left shift checksum
 	checksum <<= (8 - (wtnLen2*w)%8)
 	// big-endian-order byte string of checksum
-	checksumBytes := make([]byte, (wtnLen2*w+7)/8)
-	mssbinary.PutUint(checksumBytes, uint64(checksum))
-	ToBase(blocks[wtnLen1:], checksumBytes, w)
+	var cb [2]byte
+	binary.BigEndian.PutUint16(cb[:], checksum)
+	ToBase(blocks[wtnLen1:], cb[:], w)
 
 	return blocks
 }
