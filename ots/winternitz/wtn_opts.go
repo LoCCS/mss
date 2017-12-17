@@ -11,7 +11,7 @@ type WtnOpts struct {
 }
 
 // NewWtnOpts makes a WtnOpts of the specified security level
-//	and securityLevel should be in {32, 64}
+// and securityLevel should be in {32, 64}
 func NewWtnOpts(securityLevel uint32) *WtnOpts {
 	nonce := make([]byte, securityLevel)
 	if _, err := rand.Read(nonce); nil != err {
@@ -21,6 +21,7 @@ func NewWtnOpts(securityLevel uint32) *WtnOpts {
 	return &WtnOpts{newAddress(), nonce}
 }
 
+// Clone makes a copy of this WtnOpts
 func (opts *WtnOpts) Clone() *WtnOpts {
 	optsC := new(WtnOpts)
 
@@ -59,8 +60,8 @@ func (opts *WtnOpts) Nonce() []byte {
 }
 
 // SecurityLevel returns the security level specified by
-//	this WtnOpts, should be the same length as
-//	the nonce in use
+// this WtnOpts, should be the same length as
+// the nonce in use
 func (opts *WtnOpts) SecurityLevel() uint32 {
 	return uint32(len(opts.nonce))
 }

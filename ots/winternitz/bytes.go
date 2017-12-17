@@ -1,18 +1,32 @@
 package winternitz
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 // ToBase outputs an array `out` of integers between 0 and ((2<<baseWidth) - 1)
-//	len(out) is REQUIRED to be <=8*len(X)/baseWidth
-//	and baseWidth is a member in set {1,2,4,8}
+// len(out) is REQUIRED to be <=8*len(X)/baseWidth
+// and baseWidth should be a member in set {1,2,4,8}.
+// Otherwise, the result is unpredictable
 func ToBase(out []byte, X []byte, baseWidth uint8) {
 	mask := byte((1 << baseWidth) - 1)
 
-	consumed := len(out) - 1 // the smallest index of out byte filled already
-	for i := len(X) - 1; (i >= 0) && (consumed >= 0); i-- {
-		for offset := uint8(0); (offset < 8) && (consumed >= 0); offset += baseWidth {
-			out[consumed] = (X[i] >> offset) & mask
-			consumed--
+	// length of output
+	ell := len(out)
+	consumed := 0
+	for _, x := range X {
+		// a do-while loop
+		for bits := 8 - baseWidth; ; bits -= baseWidth {
+			if consumed >= ell {
+				return // no more buffer
+			}
+
+			out[consumed] = (x >> bits) & mask
+			consumed++
+
+			if 0 == bits {
+				break
+			}
 		}
 	}
 }

@@ -16,7 +16,7 @@ type PublicKey struct {
 }
 
 // PrivateKey as container for private key,
-//	it also embeds its corresponding public key
+// it also embeds its corresponding public key
 type PrivateKey struct {
 	PublicKey
 	x [][]byte
@@ -47,8 +47,8 @@ func (pk *PublicKey) Clone() *PublicKey {
 }
 
 // GenerateKey generates a one-time key pair
-//	according to specification (nonce, key-pair-index) in opts and
-//	by getting randomness from rng
+// according to specification (nonce, key-pair-index) in opts and
+// by getting randomness from rng
 func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 	sk := new(PrivateKey)
 	sk.x = make([][]byte, wtnLen)
@@ -103,9 +103,9 @@ func GenerateKey(opts *WtnOpts, rng io.Reader) (*PrivateKey, error) {
 }
 
 // Sign generates the signature for a message digest based on
-//	the given private key
-//	the opts should have the same seed and key-pair index and
-//	as that of generating key pairs
+// the given private key
+// the opts should have the same seed and key-pair index and
+// as that of generating key pairs
 func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	blocks := hashToBlocks(hash)
 	if len(sk.x) != len(blocks) {
@@ -152,9 +152,9 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 }
 
 // Verify verifies the Merkle signature on a message digest
-//	against the claimed public key and
-//	the opts should have the same seed and key-pair index
-//	as that of generating key pairs
+// against the claimed public key and
+// the opts should have the same seed and key-pair index
+// as that of generating key pairs
 func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	blocks := hashToBlocks(hash)
 	if (len(pk.Y) != len(blocks)) || (len(pk.Y) != len(wtnSig.sigma)) {

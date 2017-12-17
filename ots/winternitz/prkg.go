@@ -9,7 +9,7 @@ import (
 )
 
 // KeyIterator is a prkgator to produce a key chain for
-//	user based on a seed
+// user based on a seed
 type KeyIterator struct {
 	rng *rand.Rand
 	// the 0-based index of next running prkgation
@@ -32,7 +32,7 @@ func NewKeyIterator(compactSeed []byte) *KeyIterator {
 }
 
 // Init initialises the prkgator with the composite seed
-//	exported by Serialize()
+// exported by Serialize()
 func (prkg *KeyIterator) Init(compositeSeed []byte) bool {
 	buf := bytes.NewBuffer(compositeSeed)
 
@@ -100,13 +100,13 @@ func (prkg *KeyIterator) Offset() uint32 {
 }
 
 // Serialize encodes the key iterator as
-//	+---------------------------------------------+
-//	|	len(seed)||seed||offset||len(nonce)||nonce	|
-//	+---------------------------------------------+
-//	the byte slice export from here makes up
-//	everything needed to recovered the state the prkg
-//	So unless it's your first-time use, you should
-//	store this byte slice so as to snapshot the prkg
+// +---------------------------------------------+
+// |	len(seed)||seed||offset||len(nonce)||nonce	|
+// +---------------------------------------------+
+// the byte slice export from here makes up
+// everything needed to recovered the state the prkg
+// So unless it's your first-time use, you should
+// store this byte slice so as to snapshot the prkg
 func (prkg *KeyIterator) Serialize() []byte {
 	buf := new(bytes.Buffer)
 
