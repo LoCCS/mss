@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	H = 8 // the height of the merkle tree
+	H = 10 // the height of the merkle tree
 )
 
 func TestMSS(t *testing.T) {
@@ -18,11 +18,12 @@ func TestMSS(t *testing.T) {
 	agentStart := time.Now()
 	merkleAgent, err := NewMerkleAgent(H, seed)
 	agentTime := time.Since(agentStart)
-
+	fmt.Println(len(merkleAgent.root))
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("Time on new merkle Agent with height %v : %v\n", H, agentTime)
+
 
 	var signSum time.Duration
 	var verifySum time.Duration
@@ -42,6 +43,10 @@ func TestMSS(t *testing.T) {
 		message, err := rand.RandSeed()
 		signStart := time.Now()
 		_, sig, err := Sign(merkleAgent, message)
+
+
+
+
 		signTime := time.Since(signStart)
 		if err != nil {
 			fmt.Println(err)
@@ -49,6 +54,9 @@ func TestMSS(t *testing.T) {
 				continue
 			}
 		}
+		sigBytes := sig.Serialize()
+		sig = DeserializeMerkleSig(sigBytes)
+
 		signSum += signTime
 		if signTime > maxsig {
 			maxsig = signTime

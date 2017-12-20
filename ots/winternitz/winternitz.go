@@ -116,7 +116,7 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	wtnSig.sigma = make([][]byte, len(sk.x))
 
 	var wg sync.WaitGroup
-	numCPU := uint32(runtime.NumCPU())
+	numCPU := uint32(7)
 	xLen := uint32(len(sk.x))
 	jobSize := (xLen + numCPU - 1) / numCPU
 	for i := uint32(0); i < numCPU; i++ {
@@ -201,4 +201,37 @@ func Verify(pk *PublicKey, hash []byte, wtnSig *WinternitzSig) bool {
 	wg.Wait()
 
 	return ok
+}
+
+//Serialize encodes the winternitz signature
+func (sig *WinternitzSig) Serialize() []byte{
+	sNum := len(sig.sigma)
+	size := 0
+	if sNum > 0 && sig.sigma[0] != nil {
+		size = len(sig.sigma[0])
+	}
+	sigBytes := make([]byte, 2 + 2 + sNum * size)
+	binary.LittleEndian.PutUint16(sigBytes[0:2], uint16(sNum))
+	binary.LittleEndian.PutUint16(sigBytes[2:4], uint16(size))
+	offset := 4
+	for _, s := range sig.sigma{
+		copy(sigBytes[offset: offset + size], s)
+		offset += size
+	}
+	return sigBytes
+}
+
+//Deserialize decodes the winternitz signature from bytes
+func DeserializeWinternitzSig(sigBytes []byte) *WinternitzSig{
+	sNum := int(binary.LittleEndian.Uint16(sigBytes[0:2]))
+	size := int(binary.LittleEndian.Uint16(sigBytes[2:4]))
+	offset := 4
+	sigma := make([][]byte, sNum)
+	for i := 0; i < int(sNum); i++{
+		sigma[i] = sigBytes[offset : offset + size]
+		offset += size
+	}
+	return &WinternitzSig{
+		sigma,
+	}
 }

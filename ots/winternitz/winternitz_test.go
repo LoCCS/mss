@@ -6,6 +6,7 @@ import (
 
 	"github.com/LoCCS/mss/config"
 	mssrand "github.com/LoCCS/mss/rand"
+	"fmt"
 )
 
 // TestWinternitzSig tests the signing/verifying of W-OTS
@@ -17,7 +18,7 @@ func TestWinternitzSig(t *testing.T) {
 
 	// generate keys
 	sk, _ := GenerateKey(DummyWtnOpts, mssrand.Reader)
-
+	fmt.Println(len(sk.x))
 	wtnSig, err := Sign(sk, hash)
 	if nil != err {
 		t.Fatal(err)

@@ -66,5 +66,33 @@ func (opts *WtnOpts) SecurityLevel() uint32 {
 	return uint32(len(opts.nonce))
 }
 
+//Serialize encodes the winternitz options
+func (opts *WtnOpts) Serialize() []byte {
+	addrLen := uint8(len(opts.addr))
+	nonceLen := uint8(len(opts.nonce))
+
+	optsBytes := make([]byte, 1 + addrLen + 1 + nonceLen)
+	optsBytes[0] = addrLen
+	copy(optsBytes[1:], opts.addr)
+	offset := 1 + addrLen
+	optsBytes[offset] = nonceLen
+	copy(optsBytes[offset + 1:], opts.nonce)
+	return optsBytes
+}
+
+//Deserialize recovers the WtnOpts from bytes
+func Deserialize(optsBytes []byte) *WtnOpts{
+	var addr address
+	addrLen := optsBytes[0]
+	addr = optsBytes[1: 1+addrLen]
+	offset := 1 + addrLen
+	nonceLen := optsBytes[offset]
+	nonce := optsBytes[offset + 1: offset + 1 + nonceLen]
+	opts := &WtnOpts{
+		addr:addr,
+		nonce:nonce,
+	}
+	return opts
+}
 // DummyWtnOpts is a dummy WtnOpts with a random nonce
 var DummyWtnOpts *WtnOpts = NewWtnOpts(SecurityLevel)

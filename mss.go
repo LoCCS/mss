@@ -246,3 +246,81 @@ func RebuildMerkleAgent(plain []byte, secret []byte) *MerkleAgent{
 	}
 	return agent
 }
+
+//Serialize encodes the merklesig
+func (sig *MerkleSig)Serialize() []byte{
+	sigBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(sigBytes[0:4], sig.Leaf)
+	optsBytes := sig.LeafPk.WtnOpts.Serialize()
+	sigBytes = append(sigBytes, optsBytes...)
+	pNum := len(sig.LeafPk.Y)
+	size := 0
+	if pNum > 0 && sig.LeafPk.Y[0] != nil {
+		size = len(sig.LeafPk.Y[0])
+	}
+	pbBytes := make([]byte, 2 + 2 + pNum * size)
+	binary.LittleEndian.PutUint16(pbBytes[0:2], uint16(pNum))
+	binary.LittleEndian.PutUint16(pbBytes[2:4], uint16(size))
+	offset := 4
+	for _, y := range sig.LeafPk.Y{
+		copy(pbBytes[offset: offset + size], y)
+		offset += size
+	}
+	sigBytes = append(sigBytes, pbBytes...)
+	wsBytes := sig.WtnSig.Serialize()
+	sigBytes = append(sigBytes, wsBytes...)
+
+	h := len(sig.Auth)
+	size = 0
+	if h > 0 && sig.Auth[0] != nil {
+		size = len(sig.Auth[0])
+	}
+	auBytes := make([]byte, 2 + 2 + h * size)
+	binary.LittleEndian.PutUint16(auBytes[0:2],  uint16(h))
+	binary.LittleEndian.PutUint16(auBytes[2:4], uint16(size))
+	offset = 4
+	for _, au := range sig.Auth{
+		copy(auBytes[offset: offset + size], au)
+		offset += size
+	}
+	sigBytes = append(sigBytes, auBytes...)
+	return sigBytes
+}
+
+//DeserializeMerkleSig the merklesig struct from bytes
+func DeserializeMerkleSig (sigBytes []byte) *MerkleSig{
+	ms := &MerkleSig{}
+	ms.Leaf = binary.LittleEndian.Uint32(sigBytes[0:4])
+	offset := 4
+	wnts := wots.Deserialize(sigBytes[4:])
+	offset += int(sigBytes[offset]) + 1
+	offset += int(sigBytes[offset]) + 1
+	pNum := int(binary.LittleEndian.Uint16(sigBytes[offset:offset+2]))
+	size := int(binary.LittleEndian.Uint16(sigBytes[offset+2:offset+4]))
+	offset += 4
+	Y := make([][]byte, pNum)
+	for i := 0; i < pNum; i++{
+		Y[i] = sigBytes[offset: offset+size]
+		offset += size
+	}
+	ms.LeafPk = &wots.PublicKey{
+		wnts,
+		Y,
+	}
+	sNum := int(binary.LittleEndian.Uint16(sigBytes[offset:offset+2]))
+	size = int(binary.LittleEndian.Uint16(sigBytes[offset+2:offset+4]))
+	ms.WtnSig = wots.DeserializeWinternitzSig(sigBytes[offset:])
+	offset += 4 + sNum * size
+
+	h := int(binary.LittleEndian.Uint16(sigBytes[offset:offset+2]))
+	size = int(binary.LittleEndian.Uint16(sigBytes[offset+2:offset+4]))
+	offset += 4
+	Auth := make([][]byte, h)
+	for i := 0; i < h; i++{
+		Auth[i] = sigBytes[offset:offset+size]
+		offset += size
+	}
+	ms.Auth = Auth
+
+	return ms
+}
