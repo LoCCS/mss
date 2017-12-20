@@ -36,7 +36,7 @@ func TestMSS(t *testing.T) {
 		if i%1837 == 0{
 			fmt.Printf("Success %v, failure %v\n", success, failure)
 			mBytes := merkleAgent.Serialize()
-			sBytes := merkleAgent.SerializeSecret()
+			sBytes := merkleAgent.SerializeSecretKey()
 			merkleAgent = RebuildMerkleAgent(mBytes, sBytes)
 		}
 

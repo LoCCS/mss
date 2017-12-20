@@ -211,7 +211,7 @@ func (agent *MerkleAgent) Serialize() []byte{
 }
 
 //SerializeSecret encodes all the secret data which shall be encrypted
-func (agent *MerkleAgent) SerializeSecret() []byte{
+func (agent *MerkleAgent) SerializeSecretKey() []byte{
 	return agent.keyItr.Serialize()
 }
 
