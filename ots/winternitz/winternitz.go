@@ -116,7 +116,7 @@ func Sign(sk *PrivateKey, hash []byte) (*WinternitzSig, error) {
 	wtnSig.sigma = make([][]byte, len(sk.x))
 
 	var wg sync.WaitGroup
-	numCPU := uint32(7)
+	numCPU := uint32(runtime.NumCPU())
 	xLen := uint32(len(sk.x))
 	jobSize := (xLen + numCPU - 1) / numCPU
 	for i := uint32(0); i < numCPU; i++ {
